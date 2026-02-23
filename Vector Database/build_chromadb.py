@@ -3,33 +3,9 @@
 CapEx Intelligence — Multi-Company ChromaDB Vector Embedding Pipeline
 ChromaDB 1.4.x | sentence-transformers all-mpnet-base-v2 (768-dim)
 
-Actual folder layout:
-  flex_practicum/
-    Flex/                          ← use this, not the root-level duplicates
-      annual_10K/                  (HTML)
-      quarterly_10Q/               (HTML)
-      flex_8k_press_releases/      (HTML)
-      flex_transcripts/            (PDF)
-      Earnings Presentation/       (PDF)
-      Press Releases/              (PDF)
-    Jabil/
-      10K/  10Q/  8K/              (PDF)
-      Earnings Call/               (PDF)
-      Earnings Presentation/       (PDF)
-      Press Release/               (PDF)
-    benchmark/
-      benchmark_filings/           (HTM — mixed 10-K and 10-Q in one folder)
-    Samsara/
-      10K/  10Q/  8K/              (PDF)
-      Earnings/                    (PDF)
-      Shareholder/                 (PDF)
-      Investor Presentations/      (PDF)
-    Celestica/                     ← no filings, skip
-
-Run:
-    cd ~/Documents/flex_practicum
-    pip install chromadb sentence-transformers beautifulsoup4 lxml PyPDF2
-    python build_chromadb.py
+Run from the project root:
+    cd Flex-Practicum-Project-2026
+    python "Vector Database/build_chromadb.py"
 """
 
 import re
@@ -54,14 +30,14 @@ except ImportError:
     import PyPDF2
 
 # ---------------------------------------------------------------------------
-# CONFIG
+# CONFIG — auto-detect project root from this script's location
 # ---------------------------------------------------------------------------
-BASE    = Path.home() / "Documents" / "flex_practicum"
+SCRIPT_DIR = Path(__file__).resolve().parent
+BASE = SCRIPT_DIR.parent                          # project root
 DB_PATH = str(BASE / "chromadb_store")
 
-# Explicit source map: company → list of (subfolder, filing_type) pairs.
-# Only these folders are ingested. Celestica excluded (no filings).
-# Root-level Flex duplicates excluded — only Flex/ subfolder used.
+# Company → list of (subfolder, filing_type) pairs.
+# Paths are relative to BASE / company_folder.
 SOURCES = {
     "Flex": [
         ("annual_10K",             "10-K"),
@@ -79,25 +55,35 @@ SOURCES = {
         ("Earnings Presentation",  "Earnings Presentation"),
         ("Press Release",          "Press Release"),
     ],
+    "Celestica/Celestica": [
+        ("10-K",                   "10-K"),
+        ("10-Q",                   "10-Q"),
+        ("Earnings Calls",         "Earnings Transcript"),
+        ("Earnings Presentation ", "Earnings Presentation"),
+        ("News Releases",          "Press Release"),
+        ("ShareholderLetter",      "Shareholder Letter"),
+    ],
     "benchmark": [
         ("benchmark_filings",      None),   # None = auto-detect from filename
+        ("Annual Report",          "10-K"),
+        ("Earnings Presentation",  "Earnings Presentation"),
+        ("Press Release",          "Press Release"),
     ],
-    "Samsara": [
+    "Sanmina": [
         ("10K",                    "10-K"),
         ("10Q",                    "10-Q"),
-        ("8K",                     "8-K"),
-        ("Earnings",               "Earnings Transcript"),
-        ("Shareholder",            "Shareholder Letter"),
-        ("Investor Presentations", "Earnings Presentation"),
+        ("sanmina_8k",             "8-K"),
+        ("SanminaEarningsPresentations", "Earnings Presentation"),
+        ("SanminaPressReleases",   "Press Release"),
     ],
 }
 
-# Display name normalization
 COMPANY_DISPLAY = {
     "Flex": "Flex",
     "Jabil": "Jabil",
+    "Celestica/Celestica": "Celestica",
     "benchmark": "Benchmark",
-    "Samsara": "Samsara",
+    "Sanmina": "Sanmina",
 }
 
 # ---------------------------------------------------------------------------
@@ -278,10 +264,10 @@ def build_db():
     print(f"\n📁 DB path: {DB_PATH}")
     client = chromadb.PersistentClient(path=DB_PATH)
     collection = client.get_or_create_collection(
-        name="flex_capex_docs",
+        name="capex_docs",
         metadata={"hnsw:space": "cosine"}
     )
-    print(f"   Collection: flex_capex_docs | Existing docs: {collection.count()}")
+    print(f"   Collection: capex_docs | Existing docs: {collection.count()}")
 
     # --- Embedding model ---
     print("\n🔄 Loading embedding model (all-mpnet-base-v2)...")

@@ -219,9 +219,7 @@ The app uses a vector database (ChromaDB) to search through SEC filings. This da
 From the project root folder:
 
 ```bash
-cd "Vector Database"
-python3 build_chromadb.py
-cd ..
+python3 "Vector Database/build_chromadb.py"
 ```
 
 You'll see output like:
@@ -235,16 +233,15 @@ You'll see output like:
   Scanning company folders...
   📂 Flex         → 27 files
   📂 Jabil        → 84 files
+  📂 Celestica    → 77 files
+  📂 Benchmark    → 111 files
+  📂 Sanmina      → 106 files
   ...
 ```
 
 Wait until you see `✅ ChromaDB ready for all companies`.
 
-> **Important:** The `build_chromadb.py` script looks for company data in `~/Documents/flex_practicum/`. If your data is somewhere else, you'll need to update the `BASE` variable at the top of the script, OR create a symlink:
-> ```bash
-> # Mac/Linux: Create a symlink so the script can find your data
-> ln -s "$(pwd)" ~/Documents/flex_practicum
-> ```
+> The script automatically finds the company data folders relative to the project root. No path configuration needed.
 
 ---
 
