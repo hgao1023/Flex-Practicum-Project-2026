@@ -1,0 +1,415 @@
+#!/usr/bin/env python3
+"""
+CapEx Intelligence — Multi-Company ChromaDB Vector Embedding Pipeline
+ChromaDB 1.4.x | sentence-transformers all-mpnet-base-v2 (768-dim)
+
+Actual folder layout:
+  flex_practicum/
+    Flex/                          ← use this, not the root-level duplicates
+      annual_10K/                  (HTML)
+      quarterly_10Q/               (HTML)
+      flex_8k_press_releases/      (HTML)
+      flex_transcripts/            (PDF)
+      Earnings Presentation/       (PDF)
+      Press Releases/              (PDF)
+    Jabil/
+      10K/  10Q/  8K/              (PDF)
+      Earnings Call/               (PDF)
+      Earnings Presentation/       (PDF)
+      Press Release/               (PDF)
+    benchmark/
+      benchmark_filings/           (HTM — mixed 10-K and 10-Q in one folder)
+    Samsara/
+      10K/  10Q/  8K/              (PDF)
+      Earnings/                    (PDF)
+      Shareholder/                 (PDF)
+      Investor Presentations/      (PDF)
+    Celestica/                     ← no filings, skip
+
+Run:
+    cd ~/Documents/flex_practicum
+    pip install chromadb sentence-transformers beautifulsoup4 lxml PyPDF2
+    python build_chromadb.py
+"""
+
+import re
+from pathlib import Path
+from collections import defaultdict
+
+# ---------------------------------------------------------------------------
+# IMPORTS
+# ---------------------------------------------------------------------------
+try:
+    import chromadb
+    from sentence_transformers import SentenceTransformer
+    from bs4 import BeautifulSoup
+    import PyPDF2
+except ImportError:
+    import subprocess, sys
+    for p in ["chromadb", "sentence-transformers", "beautifulsoup4", "lxml", "PyPDF2"]:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", p, "-q"])
+    import chromadb
+    from sentence_transformers import SentenceTransformer
+    from bs4 import BeautifulSoup
+    import PyPDF2
+
+# ---------------------------------------------------------------------------
+# CONFIG
+# ---------------------------------------------------------------------------
+BASE    = Path.home() / "Documents" / "flex_practicum"
+DB_PATH = str(BASE / "chromadb_store")
+
+# Explicit source map: company → list of (subfolder, filing_type) pairs.
+# Only these folders are ingested. Celestica excluded (no filings).
+# Root-level Flex duplicates excluded — only Flex/ subfolder used.
+SOURCES = {
+    "Flex": [
+        ("annual_10K",             "10-K"),
+        ("quarterly_10Q",          "10-Q"),
+        ("flex_8k_press_releases", "8-K"),
+        ("flex_transcripts",       "Earnings Transcript"),
+        ("Earnings Presentation",  "Earnings Presentation"),
+        ("Press Releases",         "Press Release"),
+    ],
+    "Jabil": [
+        ("10K",                    "10-K"),
+        ("10Q",                    "10-Q"),
+        ("8K",                     "8-K"),
+        ("Earnings Call",          "Earnings Transcript"),
+        ("Earnings Presentation",  "Earnings Presentation"),
+        ("Press Release",          "Press Release"),
+    ],
+    "benchmark": [
+        ("benchmark_filings",      None),   # None = auto-detect from filename
+    ],
+    "Samsara": [
+        ("10K",                    "10-K"),
+        ("10Q",                    "10-Q"),
+        ("8K",                     "8-K"),
+        ("Earnings",               "Earnings Transcript"),
+        ("Shareholder",            "Shareholder Letter"),
+        ("Investor Presentations", "Earnings Presentation"),
+    ],
+}
+
+# Display name normalization
+COMPANY_DISPLAY = {
+    "Flex": "Flex",
+    "Jabil": "Jabil",
+    "benchmark": "Benchmark",
+    "Samsara": "Samsara",
+}
+
+# ---------------------------------------------------------------------------
+# TEXT EXTRACTION
+# ---------------------------------------------------------------------------
+def extract_html(path):
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+    return soup.get_text(separator="\n", strip=True)
+
+def extract_pdf(path):
+    text = ""
+    try:
+        with open(path, "rb") as f:
+            for page in PyPDF2.PdfReader(f).pages:
+                t = page.extract_text()
+                if t:
+                    text += t + "\n"
+    except Exception as e:
+        print(f" ⚠️  PDF error: {e}")
+    return text
+
+def extract(path):
+    if path.suffix.lower() in (".html", ".htm"):
+        return extract_html(path)
+    elif path.suffix.lower() == ".pdf":
+        return extract_pdf(path)
+    return ""
+
+# ---------------------------------------------------------------------------
+# FILING TYPE: auto-detect for benchmark (mixed folder)
+# ---------------------------------------------------------------------------
+def detect_filing_type(path):
+    name = path.name.lower()
+    if name.startswith("10-k") or "10k" in name:   return "10-K"
+    if name.startswith("10-q") or "10q" in name:   return "10-Q"
+    if name.startswith("8-k")  or "8k"  in name:   return "8-K"
+    return "Other"
+
+# ---------------------------------------------------------------------------
+# FISCAL QUARTER EXTRACTION
+# ---------------------------------------------------------------------------
+def get_fiscal_quarter(path, company):
+    name = path.name
+
+    # --- Pattern 1: FY22Q3 / FY2022Q3 / fy24q2 ---
+    m = re.search(r"[Ff][Yy](\d{2,4})[_\-]?[Qq](\d)", name)
+    if m:
+        fy = m.group(1)[-2:]
+        return f"FY{fy}", f"Q{m.group(2)}"
+
+    # --- Pattern 2: Q3-FY26 / Q1_FY25 ---
+    m = re.search(r"[Qq](\d)[_\-]?[Ff][Yy](\d{2,4})", name)
+    if m:
+        fy = m.group(2)[-2:]
+        return f"FY{fy}", f"Q{m.group(1)}"
+
+    # --- Pattern 3: JBL_2023_10Q_Q2 / JBL_2025_EarningsCall_Q3 ---
+    m = re.search(r"(\d{4}).*[Qq](\d)", name)
+    if m:
+        return f"FY{m.group(1)[-2:]}", f"Q{m.group(2)}"
+
+    # --- Pattern 4: 25Q2 / 23Q3 ---
+    m = re.search(r"(\d{2})[Qq](\d)", name)
+    if m:
+        return f"FY{m.group(1)}", f"Q{m.group(2)}"
+
+    # --- Pattern 5: Samsara 8K filenames like 8K_0824.pdf  (MMYY) ---
+    # and 10Q like 10Q_0824.pdf
+    m = re.search(r"(?:8[Kk]|10[Kk]|10[Qq])_(\d{2})(\d{2})", name)
+    if m:
+        mm, yy = int(m.group(1)), m.group(2)
+        # Samsara FY ends late Jan/early Feb → Feb-Jan fiscal year
+        # Q1=Feb-Apr, Q2=May-Jul, Q3=Aug-Oct, Q4=Nov-Jan
+        if   mm in (2,3,4):     q = "Q1"
+        elif mm in (5,6,7):     q = "Q2"
+        elif mm in (8,9,10):    q = "Q3"
+        elif mm in (11,12,1):   q = "Q4"
+        else:                   q = ""
+        # FY = calendar year of the end month (Jan belongs to prior FY end)
+        fy_year = int(yy) if mm != 1 else int(yy) - 1
+        return f"FY{yy}", q
+
+    # --- Pattern 6: Benchmark/Flex HTML with date: 10-Q_2023-09-30 / Flex_10-Q_2024-07-26 ---
+    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", name)
+    if m:
+        y, mo = int(m.group(1)), int(m.group(2))
+
+        if company in ("Flex",):
+            # Flex FY ends March. Filing months: Jul=Q1, Oct=Q2, Jan=Q3, May=Q4/10-K
+            fy = y + 1 if mo >= 4 else y
+            if   mo in (7,8):     q = "Q1"
+            elif mo in (10,11):   q = "Q2"
+            elif mo in (1,2):     q = "Q3"
+            elif mo in (5,6):     q = "Q4"
+            else:                 q = ""
+            return f"FY{str(fy)[-2:]}", q
+
+        elif company in ("benchmark",):
+            # Benchmark = calendar year. Date in filename IS the period-end date.
+            # 2023-09-30 → Q3 FY23
+            if   mo in (1,2,3):     q = "Q1"
+            elif mo in (4,5,6):     q = "Q2"
+            elif mo in (7,8,9):     q = "Q3"
+            elif mo in (10,11,12):  q = "Q4"
+            else:                   q = ""
+            return f"FY{str(y)[-2:]}", q
+
+    # --- Pattern 7: Q1-2025 (calendar) ---
+    m = re.search(r"[Qq](\d)[_\-](\d{4})", name)
+    if m:
+        return f"FY{m.group(2)[-2:]}", f"Q{m.group(1)}"
+
+    return "Unknown", ""
+
+# ---------------------------------------------------------------------------
+# CHUNKING
+# ---------------------------------------------------------------------------
+def chunk_text(text, chunk_words=400, overlap_words=40):
+    words = text.split()
+    if not words:
+        return []
+    chunks = []
+    i = 0
+    while i < len(words):
+        chunks.append(" ".join(words[i:i + chunk_words]).strip())
+        i += chunk_words - overlap_words
+    return [c for c in chunks if len(c) > 50]
+
+# ---------------------------------------------------------------------------
+# FILE DISCOVERY
+# ---------------------------------------------------------------------------
+def discover_all_files():
+    """
+    Walk the explicit SOURCES map. Returns list of (path, company_display, filing_type).
+    """
+    results = []
+    for company_folder, subdir_list in SOURCES.items():
+        company_path = BASE / company_folder
+        if not company_path.is_dir():
+            print(f"  ⚠️  Skipping {company_folder}/ — not found")
+            continue
+
+        display = COMPANY_DISPLAY[company_folder]
+        file_count = 0
+
+        for subdir_name, ftype in subdir_list:
+            subdir_path = company_path / subdir_name
+            if not subdir_path.is_dir():
+                print(f"  ⚠️  {company_folder}/{subdir_name}/ not found, skipping")
+                continue
+
+            # Grab all HTML and PDF files (non-recursive — one level only)
+            files = sorted(
+                [f for f in subdir_path.iterdir()
+                 if f.is_file() and f.suffix.lower() in (".html", ".htm", ".pdf")]
+            )
+
+            for f in files:
+                # For benchmark, ftype is None → auto-detect
+                actual_ftype = ftype if ftype else detect_filing_type(f)
+                results.append((f, display, actual_ftype))
+                file_count += 1
+
+        print(f"  📂 {display:<12} → {file_count} files")
+
+    return results
+
+# ---------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------
+def build_db():
+    print("=" * 70)
+    print("  MULTI-COMPANY CAPEX — CHROMADB EMBEDDING PIPELINE")
+    print("=" * 70)
+
+    # --- ChromaDB ---
+    print(f"\n📁 DB path: {DB_PATH}")
+    client = chromadb.PersistentClient(path=DB_PATH)
+    collection = client.get_or_create_collection(
+        name="flex_capex_docs",
+        metadata={"hnsw:space": "cosine"}
+    )
+    print(f"   Collection: flex_capex_docs | Existing docs: {collection.count()}")
+
+    # --- Embedding model ---
+    print("\n🔄 Loading embedding model (all-mpnet-base-v2)...")
+    model = SentenceTransformer("all-mpnet-base-v2")
+    print("   ✓ Model loaded (768-dim vectors)")
+
+    # --- Discover files ---
+    print("\n📂 Scanning company folders...")
+    all_files = discover_all_files()
+    print(f"\n   Total files to process: {len(all_files)}")
+
+    if not all_files:
+        print("\n❌ No files found. Check folder structure.")
+        return
+
+    # --- Process ---
+    total_chunks = 0
+    stats        = defaultdict(lambda: {"files": 0, "chunks": 0})
+    company_stats = defaultdict(lambda: {"files": 0, "chunks": 0})
+
+    for filepath, company, filing_type in all_files:
+        fy, q = get_fiscal_quarter(filepath, company)
+
+        print(f"  📄 [{company:<11}] {filepath.name:<65} ", end="", flush=True)
+
+        text = extract(filepath)
+        if not text or len(text.strip()) < 100:
+            print("→ empty")
+            continue
+
+        chunks = chunk_text(text)
+        if not chunks:
+            print("→ no chunks")
+            continue
+
+        print(f"→ {len(chunks)} chunks", end="", flush=True)
+
+        # Build batch
+        ids, texts, metadatas = [], [], []
+        for i, chunk in enumerate(chunks):
+            safe_stem = re.sub(r"[^a-zA-Z0-9_\-]", "_", filepath.stem)
+            doc_id = f"{company}_{safe_stem}_chunk{i:04d}"
+
+            ids.append(doc_id)
+            texts.append(chunk)
+            metadatas.append({
+                "company":      company,
+                "source_file":  filepath.name,
+                "filing_type":  filing_type,
+                "fiscal_year":  fy,
+                "quarter":      q,
+                "chunk_index":  i,
+                "total_chunks": len(chunks),
+            })
+
+        # Embed + upsert in batches of 64
+        for start in range(0, len(texts), 64):
+            b_ids  = ids[start:start + 64]
+            b_txt  = texts[start:start + 64]
+            b_meta = metadatas[start:start + 64]
+
+            embeddings = model.encode(b_txt, show_progress_bar=False)
+            collection.upsert(
+                ids=b_ids,
+                embeddings=embeddings.tolist(),
+                documents=b_txt,
+                metadatas=b_meta,
+            )
+
+        total_chunks += len(chunks)
+        stats[filing_type]["files"]  += 1
+        stats[filing_type]["chunks"] += len(chunks)
+        company_stats[company]["files"]  += 1
+        company_stats[company]["chunks"] += len(chunks)
+        print(" ✓")
+
+    # --- Summary ---
+    print("\n" + "=" * 70)
+    print("  EMBEDDING COMPLETE")
+    print("=" * 70)
+    print(f"\n  Total docs in collection: {collection.count()}")
+    print(f"  Total chunks embedded:    {total_chunks}\n")
+
+    print(f"  BY COMPANY:")
+    print(f"  {'Company':<14} {'Files':<8} {'Chunks'}")
+    print(f"  {'-' * 34}")
+    for co in sorted(company_stats.keys()):
+        print(f"  {co:<14} {company_stats[co]['files']:<8} {company_stats[co]['chunks']}")
+
+    print(f"\n  BY FILING TYPE:")
+    print(f"  {'Filing Type':<28} {'Files':<8} {'Chunks'}")
+    print(f"  {'-' * 48}")
+    for ftype in sorted(stats.keys()):
+        print(f"  {ftype:<28} {stats[ftype]['files']:<8} {stats[ftype]['chunks']}")
+
+    print(f"\n  DB stored at: {DB_PATH}")
+
+    # --- Smoke tests ---
+    print("\n" + "=" * 70)
+    print("  SMOKE TESTS")
+    print("=" * 70)
+
+    test_queries = [
+        ("Single company",  "Flex capital expenditure property equipment"),
+        ("Cross-company",   "capital expenditure purchases property equipment manufacturing"),
+        ("Competitor",      "Jabil capital investment facility expansion"),
+        ("Transcript",      "AI data center liquid cooling investment outlook"),
+    ]
+
+    for label, query in test_queries:
+        print(f"\n  🔍 [{label}] \"{query}\"")
+        q_emb = model.encode([query])
+        results = collection.query(
+            query_embeddings=q_emb.tolist(),
+            n_results=3,
+            include=["documents", "metadatas", "distances"]
+        )
+        for doc, meta, dist in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["distances"][0]
+        ):
+            sim = round(1 - dist, 3)
+            print(f"     sim={sim}  [{meta['company']:<11}] {meta['source_file']:<50} {meta['filing_type']} | {meta['fiscal_year']} {meta['quarter']}")
+            print(f"     {doc[:120]}...")
+
+    print("\n✅ ChromaDB ready for all companies. Next: RAG query layer.")
+
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    build_db()

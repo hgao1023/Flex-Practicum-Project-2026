@@ -1,0 +1,357 @@
+{
+  "Flex": {
+    "company": "Flex",
+    "facilities": [
+      {
+        "city": "Singapore",
+        "country": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198,
+        "type": "Manufacturing",
+        "mentions": 19,
+        "confidence": 1.0,
+        "source": "extracted"
+      }
+    ],
+    "total_extracted": 1,
+    "documents_analyzed": 50
+  },
+  "Jabil": {
+    "company": "Jabil",
+    "facilities": [
+      {
+        "city": "Singapore",
+        "country": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198,
+        "type": "Manufacturing",
+        "mentions": 4,
+        "confidence": 0.9,
+        "source": "extracted"
+      },
+      {
+        "city": "St. Petersburg",
+        "country": "USA",
+        "lat": 27.7676,
+        "lng": -82.6403,
+        "type": "Headquarters",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      }
+    ],
+    "total_extracted": 2,
+    "documents_analyzed": 50
+  },
+  "Celestica": {
+    "company": "Celestica",
+    "facilities": [
+      {
+        "city": "Toronto",
+        "country": "Canada",
+        "lat": 43.6532,
+        "lng": -79.3832,
+        "type": "Headquarters",
+        "mentions": 17,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Singapore",
+        "country": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198,
+        "type": "Manufacturing",
+        "mentions": 3,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Chennai",
+        "country": "India",
+        "lat": 13.0827,
+        "lng": 80.2707,
+        "type": "Design Center",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Austin",
+        "country": "USA",
+        "lat": 30.2672,
+        "lng": -97.7431,
+        "type": "Manufacturing",
+        "mentions": 1,
+        "confidence": 0.6,
+        "source": "extracted"
+      }
+    ],
+    "total_extracted": 4,
+    "documents_analyzed": 50
+  },
+  "Benchmark": {
+    "company": "Benchmark",
+    "facilities": [
+      {
+        "city": "Penang",
+        "country": "Malaysia",
+        "lat": 5.4141,
+        "lng": 100.3288,
+        "type": "Manufacturing",
+        "mentions": 22,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Tempe",
+        "country": "USA",
+        "lat": 33.4255,
+        "lng": -111.94,
+        "type": "Manufacturing",
+        "mentions": 21,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Rochester",
+        "country": "USA",
+        "lat": 43.1566,
+        "lng": -77.6088,
+        "type": "Manufacturing",
+        "mentions": 15,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Huntsville",
+        "country": "USA",
+        "lat": 34.7304,
+        "lng": -86.5861,
+        "type": "Manufacturing",
+        "mentions": 15,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Singapore",
+        "country": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198,
+        "type": "Manufacturing",
+        "mentions": 15,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Suzhou",
+        "country": "China",
+        "lat": 31.2989,
+        "lng": 120.5853,
+        "type": "Manufacturing",
+        "mentions": 14,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Angleton",
+        "country": "USA",
+        "lat": 29.1694,
+        "lng": -95.4316,
+        "type": "Manufacturing",
+        "mentions": 10,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Guadalajara",
+        "country": "Mexico",
+        "lat": 20.6597,
+        "lng": -103.3496,
+        "type": "Manufacturing",
+        "mentions": 10,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Austin",
+        "country": "USA",
+        "lat": 30.2672,
+        "lng": -97.7431,
+        "type": "Manufacturing",
+        "mentions": 6,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Fremont",
+        "country": "USA",
+        "lat": 37.5485,
+        "lng": -121.9886,
+        "type": "Manufacturing",
+        "mentions": 3,
+        "confidence": 0.8,
+        "source": "extracted"
+      },
+      {
+        "city": "San Jose",
+        "country": "USA",
+        "lat": 37.3382,
+        "lng": -121.8863,
+        "type": "Manufacturing",
+        "mentions": 1,
+        "confidence": 0.6,
+        "source": "extracted"
+      },
+      {
+        "city": "Tijuana",
+        "country": "Mexico",
+        "lat": 32.5149,
+        "lng": -117.0382,
+        "type": "Manufacturing",
+        "mentions": 1,
+        "confidence": 0.6,
+        "source": "extracted"
+      }
+    ],
+    "total_extracted": 12,
+    "documents_analyzed": 50
+  },
+  "Sanmina": {
+    "company": "Sanmina",
+    "facilities": [
+      {
+        "city": "San Jose",
+        "country": "USA",
+        "lat": 37.3382,
+        "lng": -121.8863,
+        "type": "Manufacturing",
+        "mentions": 7,
+        "confidence": 1.0,
+        "source": "extracted"
+      },
+      {
+        "city": "Singapore",
+        "country": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198,
+        "type": "Manufacturing",
+        "mentions": 4,
+        "confidence": 0.9,
+        "source": "extracted"
+      },
+      {
+        "city": "Chennai",
+        "country": "India",
+        "lat": 13.0827,
+        "lng": 80.2707,
+        "type": "Manufacturing",
+        "mentions": 3,
+        "confidence": 0.8,
+        "source": "extracted"
+      },
+      {
+        "city": "Austin",
+        "country": "USA",
+        "lat": 30.2672,
+        "lng": -97.7431,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Fremont",
+        "country": "USA",
+        "lat": 37.5485,
+        "lng": -121.9886,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Huntsville",
+        "country": "USA",
+        "lat": 34.7304,
+        "lng": -86.5861,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Guadalajara",
+        "country": "Mexico",
+        "lat": 20.6597,
+        "lng": -103.3496,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Monterrey",
+        "country": "Mexico",
+        "lat": 25.6866,
+        "lng": -100.3161,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Juarez",
+        "country": "Mexico",
+        "lat": 31.6904,
+        "lng": -106.4245,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Shenzhen",
+        "country": "China",
+        "lat": 22.5431,
+        "lng": 114.0579,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Wuxi",
+        "country": "China",
+        "lat": 31.4912,
+        "lng": 120.3119,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Kunshan",
+        "country": "China",
+        "lat": 31.3847,
+        "lng": 120.9837,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      },
+      {
+        "city": "Penang",
+        "country": "Malaysia",
+        "lat": 5.4141,
+        "lng": 100.3288,
+        "type": "Manufacturing",
+        "mentions": 2,
+        "confidence": 0.7,
+        "source": "extracted"
+      }
+    ],
+    "total_extracted": 13,
+    "documents_analyzed": 50
+  }
+}

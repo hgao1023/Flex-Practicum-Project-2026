@@ -1,0 +1,248 @@
+{
+  "top1_accuracy": "93.3%",
+  "top3_accuracy": "93.3%",
+  "top5_accuracy": "93.3%",
+  "cross_contamination": "6.7%",
+  "details": [
+    {
+      "query": "Flex CapEx 2024",
+      "expected": "Flex",
+      "top1_company": "Flex",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex"
+      ],
+      "similarity": 0.6845
+    },
+    {
+      "query": "Jabil capital expenditures Q1 2024",
+      "expected": "Jabil",
+      "top1_company": "Jabil",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil"
+      ],
+      "similarity": 0.8206
+    },
+    {
+      "query": "Celestica property and equipment purchases",
+      "expected": "Celestica",
+      "top1_company": "Celestica",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica"
+      ],
+      "similarity": 0.6819
+    },
+    {
+      "query": "What is Flex's manufacturing investment?",
+      "expected": "Flex",
+      "top1_company": "Flex",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex"
+      ],
+      "similarity": 0.7403
+    },
+    {
+      "query": "Sanmina capital expenditure annual report",
+      "expected": "Sanmina",
+      "top1_company": "Sanmina",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina"
+      ],
+      "similarity": 0.7857
+    },
+    {
+      "query": "Benchmark Electronics property plant equipment",
+      "expected": "Benchmark",
+      "top1_company": "Benchmark",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Benchmark",
+        "Benchmark",
+        "Benchmark",
+        "Benchmark",
+        "Benchmark"
+      ],
+      "similarity": 0.6214
+    },
+    {
+      "query": "Jabil investing activities cash flow",
+      "expected": "Jabil",
+      "top1_company": "Jabil",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil"
+      ],
+      "similarity": 0.8022
+    },
+    {
+      "query": "Flex quarterly report Q2 2024",
+      "expected": "Flex",
+      "top1_company": "Flex",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex"
+      ],
+      "similarity": 0.8117
+    },
+    {
+      "query": "Celestica annual capital spending",
+      "expected": "Celestica",
+      "top1_company": "Celestica",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica"
+      ],
+      "similarity": 0.7176
+    },
+    {
+      "query": "Sanmina purchases of property and equipment",
+      "expected": "Sanmina",
+      "top1_company": "Sanmina",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina"
+      ],
+      "similarity": 0.6795
+    },
+    {
+      "query": "Benchmark facility expansion investment",
+      "expected": "Benchmark",
+      "top1_company": "Celestica",
+      "top1_correct": false,
+      "top3_correct": false,
+      "top5_correct": false,
+      "companies_returned": [
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Jabil",
+        "Celestica"
+      ],
+      "similarity": 0.607
+    },
+    {
+      "query": "Jabil 10-K annual report 2023",
+      "expected": "Jabil",
+      "top1_company": "Jabil",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil",
+        "Jabil"
+      ],
+      "similarity": 0.8437
+    },
+    {
+      "query": "Flex data center investment spending",
+      "expected": "Flex",
+      "top1_company": "Flex",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex",
+        "Flex"
+      ],
+      "similarity": 0.7478
+    },
+    {
+      "query": "Celestica quarterly earnings Q3",
+      "expected": "Celestica",
+      "top1_company": "Celestica",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica",
+        "Celestica"
+      ],
+      "similarity": 0.7713
+    },
+    {
+      "query": "Sanmina revenue and operating expenses",
+      "expected": "Sanmina",
+      "top1_company": "Sanmina",
+      "top1_correct": true,
+      "top3_correct": true,
+      "top5_correct": true,
+      "companies_returned": [
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina",
+        "Sanmina"
+      ],
+      "similarity": 0.7972
+    }
+  ]
+}

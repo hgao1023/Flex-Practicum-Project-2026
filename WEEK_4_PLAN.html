@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 4 Plan - CapEx System Review</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #fff;
+        }
+        h1 { color: #1a365d; font-size: 2em; margin-bottom: 10px; border-bottom: 3px solid #3182ce; padding-bottom: 15px; }
+        h2 { color: #2c5282; font-size: 1.5em; margin-top: 35px; margin-bottom: 15px; border-bottom: 2px solid #bee3f8; padding-bottom: 8px; }
+        h3 { color: #2b6cb0; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; }
+        p { margin-bottom: 12px; }
+        .subtitle { color: #718096; font-size: 1.1em; margin-bottom: 25px; }
+        .highlight-box { background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%); border-left: 4px solid #3182ce; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .warning-box { background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%); border-left: 4px solid #dd6b20; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .critical-box { background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-left: 4px solid #c53030; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .success-box { background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%); border-left: 4px solid #38a169; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .purple-box { background: linear-gradient(135deg, #faf5ff 0%, #e9d8fd 100%); border-left: 4px solid #805ad5; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .pink-box { background: linear-gradient(135deg, #fff5f7 0%, #fed7e2 100%); border-left: 4px solid #d53f8c; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em; }
+        th { background: #2c5282; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:nth-child(even) { background: #f7fafc; }
+        code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        pre { background: #1a202c; color: #e2e8f0; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; font-size: 0.85em; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 15px; font-size: 0.75em; font-weight: 600; }
+        .badge-critical { background: #fed7d7; color: #c53030; }
+        .badge-high { background: #feebc8; color: #c05621; }
+        .badge-medium { background: #fefcbf; color: #975a16; }
+        .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+        .metric-card { background: #f7fafc; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+        .metric-value { font-size: 1.8em; font-weight: 700; color: #2c5282; }
+        .metric-label { color: #718096; font-size: 0.8em; }
+        .person-section { border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 25px 0; }
+        .person-section.p1 { border-color: #3182ce; }
+        .person-section.p2 { border-color: #38a169; }
+        .person-section.p3 { border-color: #dd6b20; }
+        .person-section.p4 { border-color: #805ad5; }
+        .person-section.lucas { border-color: #d53f8c; }
+        .person-header { font-size: 1.4em; font-weight: 700; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+        .person-header.p1 { color: #2c5282; border-color: #bee3f8; }
+        .person-header.p2 { color: #276749; border-color: #c6f6d5; }
+        .person-header.p3 { color: #c05621; border-color: #feebc8; }
+        .person-header.p4 { color: #553c9a; border-color: #e9d8fd; }
+        .person-header.lucas { color: #b83280; border-color: #fed7e2; }
+        .task-item { background: #f7fafc; padding: 12px 15px; margin: 10px 0; border-radius: 8px; border-left: 3px solid #cbd5e0; }
+        .task-item.critical { border-left-color: #c53030; background: #fff5f5; }
+        .task-item.high { border-left-color: #dd6b20; background: #fffaf0; }
+        .deliverable { background: #ebf8ff; padding: 10px 15px; border-radius: 8px; margin-top: 15px; }
+        .page-break { page-break-before: always; }
+        @media print { body { padding: 20px; } .page-break { page-break-before: always; } }
+    </style>
+</head>
+<body>
+
+<h1>📋 Week 4 Plan</h1>
+<p class="subtitle">CapEx System Review | 5 Members | Due: Friday</p>
+
+<div class="critical-box">
+    <strong>📋 HOW THIS WORKS</strong><br>
+    • Each person has their own task list below<br>
+    • Work independently at your own pace<br>
+    • Update the shared Google Sheet tracker with your progress<br>
+    • All tasks must be complete by <strong>Friday</strong>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-value">5</div>
+        <div class="metric-label">Team Members</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value">8</div>
+        <div class="metric-label">Issues to Fix</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value">30</div>
+        <div class="metric-label">Ground Truth Docs</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value">+78%</div>
+        <div class="metric-label">Target Accuracy Gain</div>
+    </div>
+</div>
+
+<h2>Team Overview</h2>
+
+<table>
+    <tr>
+        <th>Person</th>
+        <th>Role</th>
+        <th>Focus Area</th>
+        <th>Est. Hours</th>
+    </tr>
+    <tr>
+        <td><strong>Person 1</strong></td>
+        <td>Text Extraction</td>
+        <td>PDF parsing, table extraction, multi-column fix</td>
+        <td>~8 hrs</td>
+    </tr>
+    <tr>
+        <td><strong>Person 2</strong></td>
+        <td>Classification</td>
+        <td>10-K vs 10-Q detection, metadata extraction</td>
+        <td>~6 hrs</td>
+    </tr>
+    <tr>
+        <td><strong>Person 3</strong></td>
+        <td>RAG & Retrieval</td>
+        <td>ChromaDB, chunking, company filtering</td>
+        <td>~8 hrs</td>
+    </tr>
+    <tr>
+        <td><strong>Person 4</strong></td>
+        <td>AI Extraction</td>
+        <td>Prompts, JSON parsing, YTD handling</td>
+        <td>~8 hrs</td>
+    </tr>
+    <tr>
+        <td><strong>Lucas</strong></td>
+        <td>Ground Truth & Report</td>
+        <td>Manual PDF extraction, accuracy comparison</td>
+        <td>~8 hrs</td>
+    </tr>
+</table>
+
+<!-- ==================== PERSON 1 ==================== -->
+<div class="page-break"></div>
+<div class="person-section p1">
+    <div class="person-header p1">👤 PERSON 1: Text Extraction & PDF Parsing</div>
+    
+    <p><strong>Files to work on:</strong> <code>pdf_extractor.py</code>, <code>table_extractor.py</code></p>
+    
+    <h3>Tasks</h3>
+    
+    <div class="task-item">
+        <strong>Task 1: Set up test environment</strong>
+        <ul>
+            <li>Install pdfplumber: <code>pip install pdfplumber</code></li>
+            <li>Verify you can run the extraction scripts</li>
+            <li>Test on 5 sample PDFs to understand current behavior</li>
+        </ul>
+    </div>
+    
+    <div class="task-item high">
+        <strong>Task 2: Fix multi-column PDF extraction</strong> <span class="badge badge-medium">PDF-001</span>
+        <ul>
+            <li>Current issue: Multi-column PDFs have text in wrong order</li>
+            <li>Switch from PyPDF2 to pdfplumber for better layout detection</li>
+            <li>Test on 10-K documents with multi-column layouts</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 3: Improve table extraction</strong>
+        <ul>
+            <li>Cash flow statement tables often garbled</li>
+            <li>Use pdfplumber's <code>extract_tables()</code> method</li>
+            <li>Preserve column alignment and number formatting</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 4: Test and validate fixes</strong>
+        <ul>
+            <li>Re-run extraction on all documents</li>
+            <li>Measure extraction quality (% of tables correctly parsed)</li>
+            <li>Document any remaining issues</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 5: Document findings</strong>
+        <ul>
+            <li>Create <code>Person1_Findings.md</code> with:</li>
+            <li>What was broken, what you fixed, before/after comparison</li>
+        </ul>
+    </div>
+    
+    <div class="deliverable">
+        <strong>📦 Deliverables:</strong>
+        <ul>
+            <li>Updated <code>pdf_extractor.py</code> using pdfplumber</li>
+            <li>Extraction quality metrics</li>
+            <li><code>Person1_Findings.md</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERSON 2 ==================== -->
+<div class="person-section p2">
+    <div class="person-header p2">👤 PERSON 2: Document Classification</div>
+    
+    <p><strong>Files to work on:</strong> <code>document_classifier.py</code>, <code>metadata_extractor.py</code></p>
+    
+    <h3>Tasks</h3>
+    
+    <div class="task-item">
+        <strong>Task 1: Review current classification logic</strong>
+        <ul>
+            <li>Understand how documents are classified (10-K, 10-Q, 8-K, etc.)</li>
+            <li>Test on 15 documents, record accuracy</li>
+            <li>Identify common misclassifications</li>
+        </ul>
+    </div>
+    
+    <div class="task-item critical">
+        <strong>Task 2: Fix 10-K vs 10-Q confusion</strong> <span class="badge badge-high">CLS-001</span>
+        <ul>
+            <li>Current issue: System confuses annual (10-K) and quarterly (10-Q) reports</li>
+            <li>Add checks for "ANNUAL REPORT" vs "QUARTERLY REPORT" text</li>
+            <li>Look for fiscal year indicators vs quarter indicators</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 3: Fix fiscal year/quarter extraction</strong>
+        <ul>
+            <li>Extract correct fiscal year (FY2024, FY2023, etc.)</li>
+            <li>Extract correct quarter (Q1, Q2, Q3, Q4) for 10-Q documents</li>
+            <li>Handle different date formats companies use</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 4: Test and validate fixes</strong>
+        <ul>
+            <li>Re-run classification on all documents</li>
+            <li>Measure accuracy: should be >95%</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 5: Document findings</strong>
+        <ul>
+            <li>Create <code>Person2_Findings.md</code></li>
+        </ul>
+    </div>
+    
+    <div class="deliverable">
+        <strong>📦 Deliverables:</strong>
+        <ul>
+            <li>Updated <code>document_classifier.py</code></li>
+            <li>Classification accuracy: before X% → after Y%</li>
+            <li><code>Person2_Findings.md</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERSON 3 ==================== -->
+<div class="page-break"></div>
+<div class="person-section p3">
+    <div class="person-header p3">👤 PERSON 3: RAG & Retrieval</div>
+    
+    <p><strong>Files to work on:</strong> <code>retriever.py</code>, <code>chunker.py</code></p>
+    
+    <h3>Tasks</h3>
+    
+    <div class="task-item">
+        <strong>Task 1: Test current retrieval accuracy</strong>
+        <ul>
+            <li>Run 15 test queries (see examples below)</li>
+            <li>Check if correct documents are returned</li>
+            <li>Measure Top-5 accuracy (is the right doc in top 5 results?)</li>
+        </ul>
+        <pre>
+Test queries:
+- "Flex CapEx 2024"
+- "Jabil capital expenditures Q1 2024"
+- "Celestica property and equipment purchases"
+- "What is Flex's manufacturing investment?"</pre>
+    </div>
+    
+    <div class="task-item critical">
+        <strong>Task 2: Fix cross-company contamination</strong> <span class="badge badge-high">RET-001</span>
+        <ul>
+            <li>Current issue: Query for "Flex CapEx" returns Jabil documents</li>
+            <li>Add metadata filtering by company name</li>
+            <li>Ensure company is stored in document metadata</li>
+        </ul>
+    </div>
+    
+    <div class="task-item high">
+        <strong>Task 3: Fix chunk boundary issues</strong> <span class="badge badge-medium">RET-002</span>
+        <ul>
+            <li>Current issue: Numbers split from their labels across chunks</li>
+            <li>Increase chunk overlap (try 200-300 tokens)</li>
+            <li>Consider sentence-aware chunking</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 4: Optimize chunk size</strong>
+        <ul>
+            <li>Test different chunk sizes: 500, 750, 1000 tokens</li>
+            <li>Measure retrieval accuracy for each</li>
+            <li>Find optimal setting</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 5: Test and document</strong>
+        <ul>
+            <li>Re-test all queries after fixes</li>
+            <li>Create <code>Person3_Findings.md</code></li>
+        </ul>
+    </div>
+    
+    <div class="deliverable">
+        <strong>📦 Deliverables:</strong>
+        <ul>
+            <li>Updated <code>retriever.py</code> with metadata filtering</li>
+            <li>Optimal chunk size recommendation</li>
+            <li>Retrieval accuracy: before X% → after Y%</li>
+            <li><code>Person3_Findings.md</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERSON 4 ==================== -->
+<div class="person-section p4">
+    <div class="person-header p4">👤 PERSON 4: AI Extraction & Prompts</div>
+    
+    <p><strong>Files to work on:</strong> <code>ai_extractor.py</code>, <code>prompts.py</code>, <code>json_parser.py</code></p>
+    
+    <h3>Tasks</h3>
+    
+    <div class="task-item">
+        <strong>Task 1: Get ground truth from Lucas</strong>
+        <ul>
+            <li>Wait for Lucas to share <code>ground_truth.csv</code></li>
+            <li>This is the "answer key" to test extraction accuracy</li>
+        </ul>
+    </div>
+    
+    <div class="task-item critical">
+        <strong>Task 2: Fix YTD vs Quarterly confusion</strong> <span class="badge badge-critical">EXT-001</span>
+        <ul>
+            <li>CRITICAL: System extracts YTD (year-to-date) instead of single quarter</li>
+            <li>Example: Q2 shows $600M (YTD) instead of $300M (Q2 only)</li>
+            <li>Update prompts to explicitly ask for single quarter values</li>
+            <li>Add logic to detect and handle YTD vs quarterly</li>
+        </ul>
+    </div>
+    
+    <div class="task-item high">
+        <strong>Task 3: Fix negative number handling</strong> <span class="badge badge-high">EXT-002</span>
+        <ul>
+            <li>CapEx often shown as negative in cash flow (cash outflow)</li>
+            <li>System should convert to positive (CapEx is always positive)</li>
+            <li>Handle formats: $(500), -500, (500)</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 4: Add alternative CapEx labels</strong> <span class="badge badge-medium">EXT-003</span>
+        <ul>
+            <li>Different companies use different labels:</li>
+            <li>"Purchases of property and equipment"</li>
+            <li>"Capital expenditures"</li>
+            <li>"Additions to property, plant and equipment"</li>
+            <li>"Investments in property and equipment"</li>
+            <li>Update prompts to look for all variations</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 5: Test against ground truth</strong>
+        <ul>
+            <li>Run extraction on all 30 ground truth documents</li>
+            <li>Compare extracted values vs Lucas's manual values</li>
+            <li>Calculate accuracy percentage</li>
+            <li>Share results with Lucas for final report</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 6: Document findings</strong>
+        <ul>
+            <li>Create <code>Person4_Findings.md</code></li>
+        </ul>
+    </div>
+    
+    <div class="deliverable">
+        <strong>📦 Deliverables:</strong>
+        <ul>
+            <li>Updated <code>prompts.py</code> with improved prompts</li>
+            <li>Updated <code>ai_extractor.py</code> with negative number handling</li>
+            <li>Extraction accuracy: before X% → after Y%</li>
+            <li><code>Person4_Findings.md</code></li>
+            <li>System output CSV to share with Lucas</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LUCAS ==================== -->
+<div class="page-break"></div>
+<div class="person-section lucas">
+    <div class="person-header lucas">👤 LUCAS: Ground Truth & Final Report</div>
+    
+    <p><strong>Your role:</strong> Create the "answer key" by manually extracting CapEx from PDFs, then compare with system output.</p>
+    
+    <h3>Tasks</h3>
+    
+    <div class="task-item">
+        <strong>Task 1: Create shared Google Sheet tracker</strong>
+        <ul>
+            <li>Create a Google Sheet for team progress tracking</li>
+            <li>Columns: Person, Task, Status, Notes</li>
+            <li>Share link with everyone</li>
+        </ul>
+    </div>
+    
+    <div class="task-item critical">
+        <strong>Task 2: Create ground truth dataset (30 documents)</strong>
+        <ul>
+            <li>Manually extract CapEx from 30 PDFs</li>
+            <li>For each PDF:</li>
+            <li>1. Open PDF in Preview/Adobe Reader</li>
+            <li>2. Press Cmd+F, search "cash flow"</li>
+            <li>3. Find "Consolidated Statements of Cash Flows"</li>
+            <li>4. Look in "Investing Activities" section</li>
+            <li>5. Find "Purchases of property and equipment" or "Capital expenditures"</li>
+            <li>6. Write down the number (e.g., $(505) = $505 million)</li>
+            <li>7. Note if it's quarterly or YTD</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 3: Save to ground_truth.csv</strong>
+        <pre>
+filename,company,fiscal_year,quarter,actual_capex,page_number,notes
+Flex_10K_2024.pdf,Flex,2024,,505,67,"Annual - full year"
+Flex_10Q_Q1_2024.pdf,Flex,2024,Q1,127,12,"Quarterly only"
+Flex_10Q_Q2_2024.pdf,Flex,2024,Q2,130,12,"Q2 only (YTD 257 - Q1 127)"
+Jabil_10K_2024.pdf,Jabil,2024,,700,62,"Capital expenditures line"</pre>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 4: Share ground truth with Person 4</strong>
+        <ul>
+            <li>Send <code>ground_truth.csv</code> to Person 4</li>
+            <li>They will test the system against your data</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 5: Compare system output vs ground truth</strong>
+        <ul>
+            <li>Receive system output CSV from Person 4</li>
+            <li>Compare each extracted value vs your manual value</li>
+            <li>Count: Exact matches, within 5%, within 10%, errors</li>
+            <li>Calculate overall accuracy percentage</li>
+        </ul>
+    </div>
+    
+    <div class="task-item">
+        <strong>Task 6: Compile final report</strong>
+        <ul>
+            <li>Collect findings from all 4 team members</li>
+            <li>Summarize: What was fixed, accuracy improvements</li>
+            <li>Create before/after comparison table</li>
+            <li>List any remaining issues</li>
+        </ul>
+    </div>
+    
+    <div class="deliverable">
+        <strong>📦 Deliverables:</strong>
+        <ul>
+            <li>Google Sheet tracker (share link)</li>
+            <li><code>ground_truth.csv</code> (30 entries)</li>
+            <li>Accuracy comparison spreadsheet</li>
+            <li><code>Final_Report.pdf</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ISSUES SUMMARY ==================== -->
+<div class="page-break"></div>
+<h2>Issues Summary</h2>
+
+<table>
+    <tr>
+        <th>Issue ID</th>
+        <th>Description</th>
+        <th>Owner</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td><span class="badge badge-critical">EXT-001</span></td>
+        <td>YTD vs Quarterly Confusion</td>
+        <td>Person 4</td>
+        <td>+25% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-high">EXT-002</span></td>
+        <td>Negative Number Handling</td>
+        <td>Person 4</td>
+        <td>+15% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-high">RET-001</span></td>
+        <td>Cross-Company Contamination</td>
+        <td>Person 3</td>
+        <td>+12% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-high">CLS-001</span></td>
+        <td>10-K vs 10-Q Misclassification</td>
+        <td>Person 2</td>
+        <td>+8% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-medium">EXT-003</span></td>
+        <td>Alternative CapEx Labels</td>
+        <td>Person 4</td>
+        <td>+7% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-medium">PDF-001</span></td>
+        <td>Multi-Column PDF Extraction</td>
+        <td>Person 1</td>
+        <td>+6% accuracy</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-medium">RET-002</span></td>
+        <td>Chunk Boundary Issues</td>
+        <td>Person 3</td>
+        <td>+5% accuracy</td>
+    </tr>
+</table>
+
+<h2>Success Criteria</h2>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Current (Baseline)</th>
+        <th>Target (Friday)</th>
+    </tr>
+    <tr>
+        <td>Classification Accuracy</td>
+        <td>~70%</td>
+        <td>>95%</td>
+    </tr>
+    <tr>
+        <td>Retrieval Success (Top-5)</td>
+        <td>~60%</td>
+        <td>>85%</td>
+    </tr>
+    <tr>
+        <td>CapEx Extraction Accuracy</td>
+        <td>~50%</td>
+        <td>>90%</td>
+    </tr>
+    <tr>
+        <td>Cross-Company Contamination</td>
+        <td>~30%</td>
+        <td><5%</td>
+    </tr>
+    <tr>
+        <td>YTD/Quarterly Correct</td>
+        <td>~40%</td>
+        <td>>95%</td>
+    </tr>
+</table>
+
+<h2>Tracker Updates</h2>
+
+<div class="highlight-box">
+    <strong>Update the Google Sheet tracker with:</strong>
+    <ol>
+        <li>Tasks completed</li>
+        <li>Accuracy metrics found</li>
+        <li>Any blockers</li>
+        <li>Status: In Progress / Done</li>
+    </ol>
+</div>
+
+<!-- ==================== LEARNING RESOURCES ==================== -->
+<div class="page-break"></div>
+<h2>📚 Learning Resources</h2>
+
+<p>Quick resources to help with your tasks. Focus on the section relevant to your role.</p>
+
+<!-- Person 1 Resources -->
+<div class="person-section p1">
+    <div class="person-header p1">Person 1: PDF Extraction</div>
+    
+    <h3>pdfplumber (Recommended Library)</h3>
+    <ul>
+        <li><strong>Official Docs:</strong> <a href="https://github.com/jsvine/pdfplumber">github.com/jsvine/pdfplumber</a></li>
+        <li><strong>Quick Start:</strong> <a href="https://github.com/jsvine/pdfplumber#basic-example">Basic Example</a></li>
+        <li><strong>Table Extraction:</strong> <a href="https://github.com/jsvine/pdfplumber#extracting-tables">Extracting Tables Guide</a></li>
+    </ul>
+    
+    <h3>Key Code Snippets</h3>
+    <pre>
+import pdfplumber
+
+# Extract text from PDF
+with pdfplumber.open("document.pdf") as pdf:
+    for page in pdf.pages:
+        text = page.extract_text()
+        print(text)
+
+# Extract tables
+with pdfplumber.open("document.pdf") as pdf:
+    page = pdf.pages[0]
+    tables = page.extract_tables()
+    for table in tables:
+        for row in table:
+            print(row)</pre>
+    
+    <h3>Video Tutorials</h3>
+    <ul>
+        <li>YouTube: "pdfplumber Python Tutorial" (10 min)</li>
+        <li>YouTube: "Extract Tables from PDF Python" (15 min)</li>
+    </ul>
+</div>
+
+<!-- Person 2 Resources -->
+<div class="person-section p2">
+    <div class="person-header p2">Person 2: Document Classification</div>
+    
+    <h3>SEC Filing Types</h3>
+    <ul>
+        <li><strong>10-K:</strong> Annual report - contains full year financials</li>
+        <li><strong>10-Q:</strong> Quarterly report - contains quarter financials (Q1, Q2, Q3)</li>
+        <li><strong>8-K:</strong> Current report - material events</li>
+        <li><strong>SEC EDGAR Guide:</strong> <a href="https://www.sec.gov/forms">sec.gov/forms</a></li>
+    </ul>
+    
+    <h3>Classification Patterns</h3>
+    <pre>
+# Common patterns to detect document type
+10K_PATTERNS = [
+    "ANNUAL REPORT",
+    "Form 10-K",
+    "FORM 10-K",
+    "fiscal year ended"
+]
+
+10Q_PATTERNS = [
+    "QUARTERLY REPORT", 
+    "Form 10-Q",
+    "FORM 10-Q",
+    "quarter ended",
+    "three months ended"
+]
+
+# Fiscal year detection
+import re
+# Match patterns like "FY2024", "fiscal 2024", "fiscal year 2024"
+fy_pattern = r"(?:FY|fiscal\s*(?:year)?\s*)(\d{4})"</pre>
+    
+    <h3>Resources</h3>
+    <ul>
+        <li><strong>SEC Filing Basics:</strong> <a href="https://www.investor.gov/introduction-investing/investing-basics/glossary/form-10-k">investor.gov - Form 10-K</a></li>
+        <li><strong>Python Regex:</strong> <a href="https://docs.python.org/3/library/re.html">Python re module docs</a></li>
+    </ul>
+</div>
+
+<!-- Person 3 Resources -->
+<div class="person-section p3">
+    <div class="person-header p3">Person 3: RAG & ChromaDB</div>
+    
+    <h3>ChromaDB</h3>
+    <ul>
+        <li><strong>Official Docs:</strong> <a href="https://docs.trychroma.com/">docs.trychroma.com</a></li>
+        <li><strong>Filtering Guide:</strong> <a href="https://docs.trychroma.com/guides#filtering-by-metadata">Metadata Filtering</a></li>
+    </ul>
+    
+    <h3>Key Code: Metadata Filtering</h3>
+    <pre>
+# Add documents with metadata
+collection.add(
+    documents=["Flex Q1 2024 CapEx was $127M"],
+    metadatas=[{"company": "Flex", "doc_type": "10-Q", "quarter": "Q1"}],
+    ids=["doc1"]
+)
+
+# Query with metadata filter - THIS FIXES CROSS-COMPANY CONTAMINATION
+results = collection.query(
+    query_texts=["Flex CapEx"],
+    where={"company": "Flex"},  # Only return Flex documents!
+    n_results=5
+)</pre>
+    
+    <h3>Chunking Best Practices</h3>
+    <ul>
+        <li><strong>Chunk size:</strong> 500-1000 tokens works well for financial docs</li>
+        <li><strong>Overlap:</strong> 100-200 tokens prevents splitting numbers from context</li>
+        <li><strong>Article:</strong> <a href="https://www.pinecone.io/learn/chunking-strategies/">Pinecone - Chunking Strategies</a></li>
+    </ul>
+    
+    <h3>RAG Concepts</h3>
+    <ul>
+        <li><strong>RAG Explained:</strong> <a href="https://www.pinecone.io/learn/retrieval-augmented-generation/">Pinecone - RAG Guide</a></li>
+        <li>YouTube: "RAG Tutorial with ChromaDB" (20 min)</li>
+    </ul>
+</div>
+
+<!-- Person 4 Resources -->
+<div class="person-section p4">
+    <div class="person-header p4">Person 4: Prompt Engineering & LLMs</div>
+    
+    <h3>Prompt Engineering</h3>
+    <ul>
+        <li><strong>OpenAI Guide:</strong> <a href="https://platform.openai.com/docs/guides/prompt-engineering">Prompt Engineering Best Practices</a></li>
+        <li><strong>Anthropic Guide:</strong> <a href="https://docs.anthropic.com/claude/docs/prompt-engineering">Claude Prompt Engineering</a></li>
+    </ul>
+    
+    <h3>Key Prompt Patterns</h3>
+    <pre>
+# BAD PROMPT (vague)
+"Extract CapEx from this document"
+
+# GOOD PROMPT (specific)
+"""
+Extract Capital Expenditure (CapEx) from the following SEC filing.
+
+IMPORTANT:
+- Look in the "Consolidated Statements of Cash Flows" section
+- Find the "Investing Activities" section
+- Look for: "Purchases of property and equipment" OR 
+  "Capital expenditures" OR "Additions to property"
+- For 10-Q documents: Extract SINGLE QUARTER value, NOT year-to-date
+- Convert negative numbers to positive (CapEx is always positive)
+- Return value in millions USD
+
+Document:
+{document_text}
+
+Return JSON: {"capex_millions": <number>, "period": "<Q1/Q2/Q3/Q4/Annual>"}
+"""</pre>
+    
+    <h3>JSON Parsing</h3>
+    <pre>
+import json
+import re
+
+def extract_json(llm_response):
+    # Find JSON in response
+    json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
+    if json_match:
+        return json.loads(json_match.group())
+    return None
+
+def parse_capex(value):
+    # Handle negative numbers: $(500), -500, (500)
+    if isinstance(value, str):
+        value = value.replace('$', '').replace(',', '')
+        value = value.replace('(', '-').replace(')', '')
+    return abs(float(value))</pre>
+    
+    <h3>Resources</h3>
+    <ul>
+        <li>YouTube: "Prompt Engineering for Developers" (30 min)</li>
+        <li><strong>Few-shot prompting:</strong> Include 2-3 examples in your prompt</li>
+    </ul>
+</div>
+
+<!-- Lucas Resources -->
+<div class="person-section lucas">
+    <div class="person-header lucas">Lucas: Financial Statements & SEC Filings</div>
+    
+    <h3>Understanding Cash Flow Statements</h3>
+    <ul>
+        <li><strong>Investopedia:</strong> <a href="https://www.investopedia.com/terms/c/cashflowstatement.asp">Cash Flow Statement Explained</a></li>
+        <li><strong>CapEx Definition:</strong> <a href="https://www.investopedia.com/terms/c/capitalexpenditure.asp">Capital Expenditure (CapEx)</a></li>
+    </ul>
+    
+    <h3>Where to Find CapEx in SEC Filings</h3>
+    <ol>
+        <li>Open the 10-K or 10-Q PDF</li>
+        <li>Search (Cmd+F) for "Cash Flow" or "Investing Activities"</li>
+        <li>Find section: "Consolidated Statements of Cash Flows"</li>
+        <li>Look under "Investing Activities" for:
+            <ul>
+                <li>"Purchases of property and equipment"</li>
+                <li>"Capital expenditures"</li>
+                <li>"Additions to property, plant and equipment"</li>
+            </ul>
+        </li>
+        <li>The number is usually in parentheses (negative) like $(505)</li>
+        <li>Remove the negative - CapEx is reported as positive</li>
+    </ol>
+    
+    <h3>YTD vs Quarterly (Critical!)</h3>
+    <div class="warning-box">
+        <strong>10-Q documents show TWO columns:</strong>
+        <ul>
+            <li><strong>Three months ended:</strong> Single quarter value (Q2 only)</li>
+            <li><strong>Six/Nine months ended:</strong> Year-to-date (Q1+Q2 combined)</li>
+        </ul>
+        <strong>Always extract the SINGLE QUARTER value (smaller number)!</strong>
+    </div>
+    
+    <h3>Example Cash Flow Statement</h3>
+    <pre>
+CONSOLIDATED STATEMENTS OF CASH FLOWS
+(In millions)
+                                    Three Months    Six Months
+                                    Ended 9/30      Ended 9/30
+INVESTING ACTIVITIES:
+Purchases of property 
+  and equipment                      $(127)          $(257)
+                                      ^^^^            ^^^^
+                                    Q2 only         Q1+Q2 YTD
+                                    USE THIS!       NOT THIS!</pre>
+    
+    <h3>Resources</h3>
+    <ul>
+        <li>YouTube: "How to Read a Cash Flow Statement" (10 min)</li>
+        <li>YouTube: "Understanding SEC 10-K Filings" (15 min)</li>
+        <li><strong>SEC EDGAR:</strong> <a href="https://www.sec.gov/edgar/searchedgar/companysearch">Search Company Filings</a></li>
+    </ul>
+</div>
+
+<!-- General Resources -->
+<h2>🔧 General Resources</h2>
+
+<div class="highlight-box">
+    <h3>Python Basics</h3>
+    <ul>
+        <li><strong>Python Docs:</strong> <a href="https://docs.python.org/3/">docs.python.org</a></li>
+        <li><strong>Regex Tester:</strong> <a href="https://regex101.com/">regex101.com</a> - Test your regex patterns</li>
+    </ul>
+    
+    <h3>Git Commands</h3>
+    <pre>
+git status              # Check what's changed
+git add .               # Stage all changes
+git commit -m "message" # Commit changes
+git push                # Push to remote</pre>
+    
+    <h3>Useful Tools</h3>
+    <ul>
+        <li><strong>JSON Viewer:</strong> <a href="https://jsonviewer.stack.hu/">jsonviewer.stack.hu</a></li>
+        <li><strong>CSV Viewer:</strong> Google Sheets or Excel</li>
+    </ul>
+</div>
+
+<hr style="margin-top: 40px;">
+<p style="text-align: center; color: #718096; margin-top: 20px;">
+    <strong>Week 4 Plan - CapEx System Review</strong><br>
+    5 Team Members | Due: Friday | Target: +78% Accuracy<br>
+    Work independently, update tracker with progress
+</p>
+
+</body>
+</html>
