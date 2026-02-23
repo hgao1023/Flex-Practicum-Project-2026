@@ -8,7 +8,7 @@
 |--------|-------|
 | **Target Companies** | Flex, Jabil, Celestica, Benchmark, Sanmina |
 | **Documents** | ~405 files (10-K, 10-Q, earnings calls, etc.) |
-| **Team Size** | 4 developers × 10 hrs/week |
+| **Team Size** | 4 developers x 10 hrs/week |
 | **Timeline** | 12 weeks |
 | **Monthly Cost** | ~$20-50 (Claude API only) |
 
@@ -21,24 +21,27 @@
 git clone https://github.com/sjagannathan17/Flex-Practicum-Project-2026.git
 cd Flex-Practicum-Project-2026
 
-# 2. Create .env file with your API keys
-echo "ANTHROPIC_API_KEY=your_key_here" > .env
-echo "BRAVE_API_KEY=your_key_here" >> .env
+# 2. Set up API keys
+cp backend/.env.example backend/.env
+# Edit backend/.env with your Anthropic + Brave API keys
 
-# 3. Install dependencies
-pip install -r requirements.txt
+# 3. Set up frontend env
+echo "NEXT_PUBLIC_API_URL=http://localhost:8001" > frontend/.env.local
+
+# 4. Install dependencies
+pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
 
-# 4. Start backend (Terminal 1)
+# 5. Start backend (Terminal 1)
 python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8001
 
-# 5. Start frontend (Terminal 2)
+# 6. Start frontend (Terminal 2)
 cd frontend && npm run dev
 ```
 
-**Access:** http://localhost:3000
+**App:** http://localhost:3000 | **API Docs:** http://localhost:8001/docs | **Health:** http://localhost:8001/api/health
 
-> See [SETUP.md](SETUP.md) for detailed instructions and troubleshooting.
+> See **[SETUP.md](SETUP.md)** for detailed instructions, prerequisites, and troubleshooting.
 
 ---
 
@@ -49,31 +52,39 @@ flowchart TB
     subgraph External[External Data Sources]
         SEC[SEC EDGAR]
         WebSearch[Brave Search]
-        USPTO[USPTO Patents]
+        News[News / RSS]
+        Patents[USPTO Patents]
         Jobs[Job Boards]
-        News[News RSS]
-        Earnings[Earnings Transcripts]
     end
 
-    subgraph DataIngestion[Auto Data Ingestion]
-        SECScraper[SEC Scraper]
+    subgraph Ingestion[Data Ingestion]
+        SECDownloader[SEC Downloader]
+        NewsFeed[News Feed]
         PatentScraper[Patent Scraper]
         JobScraper[Job Scraper]
-        NewsScraper[News Aggregator]
-        EarningsScraper[Transcript Scraper]
+        EarningsScraper[Earnings Scraper]
+        OCPScraper[OCP Scraper]
         Scheduler[Background Scheduler]
     end
 
     subgraph Processing[Document Processing]
-        Chunker[Text Chunker]
+        Processor[Text Extractor & Chunker]
         TableExtractor[Table Extractor]
-        Embedder[Sentence Transformer]
+        Embedder[Sentence Transformer<br/>all-mpnet-base-v2]
     end
 
     subgraph Storage[Storage Layer]
-        ChromaDB[(ChromaDB)]
-        SQLite[(SQLite)]
-        Memory[(In-Memory Cache)]
+        ChromaDB[(ChromaDB<br/>Vector Store)]
+        Cache[(In-Memory Cache)]
+    end
+
+    subgraph RAG[RAG Pipeline]
+        Retriever[Retriever]
+        WebSearcher[Web Searcher]
+        Pipeline[Hybrid Pipeline]
+        Generator[Claude Generator]
+        Agentic[Agentic RAG]
+        Memory[Conversation Memory]
     end
 
     subgraph Analytics[Analytics Engine]
@@ -81,29 +92,18 @@ flowchart TB
         Anomaly[Anomaly Detector]
         Trends[Trend Predictor]
         Classifier[AI vs Traditional]
+        FacilityExtractor[Facility Extractor]
     end
 
-    subgraph Backend[FastAPI Backend]
-        API[REST API]
-        Retriever[RAG Retriever]
-        WebSearcher[Web Searcher]
-        Generator[Claude Generator]
-        ConvMemory[Conversation Memory]
-        Alerts[Alert System]
+    subgraph Alerts[Alert System]
+        Detector[Alert Detector]
+        AlertMgr[Alert Manager]
+        EmailSender[Email Sender]
+        SlackClient[Slack Client]
     end
 
-    subgraph Integrations[External Integrations]
-        Slack[Slack Bot]
-        Email[Email Alerts]
-        Calendar[Earnings Calendar]
-    end
-
-    subgraph Frontend[Next.js Frontend]
-        Chat[Chat Interface]
-        Dashboard[Analytics Dashboard]
-        GeoMap[Geographic Heatmap]
-        Companies[Company Pages]
-        Reports[Report Generator]
+    subgraph Backend[FastAPI Backend<br/>18 Route Modules]
+        API[REST API<br/>100+ Endpoints]
     end
 
     subgraph Exports[Export Formats]
@@ -112,44 +112,57 @@ flowchart TB
         PDF[PDF Reports]
     end
 
-    SEC --> SECScraper
-    USPTO --> PatentScraper
-    Jobs --> JobScraper
-    News --> NewsScraper
-    Earnings --> EarningsScraper
-    Scheduler --> SECScraper
-    Scheduler --> PatentScraper
-    Scheduler --> JobScraper
+    subgraph Frontend[Next.js 16 Frontend]
+        Dashboard[Dashboard]
+        Chat[AI Chat]
+        CompanyPages[Company Pages]
+        AnalysisUI[Analysis & Sentiment]
+        GeoMap[Geographic Heatmap]
+        NewsUI[News Feed]
+        ReportsUI[Reports & Calendar]
+        AlertsUI[Alerts]
+    end
 
-    SECScraper --> Chunker
-    PatentScraper --> Chunker
-    EarningsScraper --> Chunker
-    Chunker --> TableExtractor
+    SEC --> SECDownloader
+    Patents --> PatentScraper
+    Jobs --> JobScraper
+    News --> NewsFeed
+    Scheduler --> SECDownloader
+    Scheduler --> PatentScraper
+
+    SECDownloader --> Processor
+    EarningsScraper --> Processor
+    Processor --> TableExtractor
     TableExtractor --> Embedder
     Embedder --> ChromaDB
-    
+
     ChromaDB --> Retriever
     WebSearch --> WebSearcher
-    Retriever --> Generator
-    WebSearcher --> Generator
-    ConvMemory --> Generator
-    Generator --> API
-    
+    Retriever --> Pipeline
+    WebSearcher --> Pipeline
+    Memory --> Pipeline
+    Pipeline --> Generator
+    Pipeline --> Agentic
+
     ChromaDB --> Analytics
-    Analytics --> SQLite
-    Analytics --> Alerts
-    Alerts --> Slack
-    Alerts --> Email
-    
-    API --> Chat
+    Analytics --> AlertMgr
+    AlertMgr --> Detector
+    Detector --> EmailSender
+    Detector --> SlackClient
+
+    Generator --> API
+    Analytics --> API
+    Alerts --> API
+    Exports --> API
+
     API --> Dashboard
+    API --> Chat
+    API --> CompanyPages
+    API --> AnalysisUI
     API --> GeoMap
-    API --> Companies
-    API --> Reports
-    
-    Reports --> Excel
-    Reports --> PPTX
-    Reports --> PDF
+    API --> NewsUI
+    API --> ReportsUI
+    API --> AlertsUI
 ```
 
 ---
@@ -167,18 +180,18 @@ sequenceDiagram
 
     User->>NextJS: Ask question
     NextJS->>FastAPI: POST /api/chat
-    
+
     alt RAG Mode
         FastAPI->>FastAPI: Embed query
         FastAPI->>ChromaDB: Semantic search
         ChromaDB-->>FastAPI: Top-k document chunks
     end
-    
+
     alt Web Search Mode
         FastAPI->>WebAPI: Search query
         WebAPI-->>FastAPI: Web results
     end
-    
+
     alt Hybrid Mode
         FastAPI->>ChromaDB: Semantic search
         FastAPI->>WebAPI: Search query
@@ -186,91 +199,11 @@ sequenceDiagram
         WebAPI-->>FastAPI: Web results
         FastAPI->>FastAPI: Merge contexts
     end
-    
+
     FastAPI->>Claude: Query + Combined Context
     Claude-->>FastAPI: Response + Citations
     FastAPI-->>NextJS: JSON response
     NextJS-->>User: Display with sources
-```
-
----
-
-## Data Flow: Auto-Download SEC Filings
-
-```mermaid
-sequenceDiagram
-    participant Scheduler as Background Scheduler
-    participant Scraper as SEC Scraper
-    participant EDGAR as SEC EDGAR
-    participant Storage as Local Storage
-    participant Embedder as Embedding Pipeline
-    participant ChromaDB
-
-    Scheduler->>Scraper: Trigger check daily at 4PM ET
-    
-    loop For each company
-        Scraper->>EDGAR: GET recent filings
-        EDGAR-->>Scraper: Filing metadata
-        Scraper->>Scraper: Compare with existing
-        
-        alt New filing found
-            Scraper->>EDGAR: Download filing
-            EDGAR-->>Scraper: PDF/HTML content
-            Scraper->>Storage: Save to company folder
-            Scraper->>Embedder: Trigger processing
-            Embedder->>Embedder: Extract text + chunk
-            Embedder->>ChromaDB: Add embeddings
-        end
-    end
-    
-    Scraper-->>Scheduler: Report status
-```
-
----
-
-## Automation Flow
-
-```mermaid
-flowchart LR
-    subgraph AutoIngest[Auto Ingestion]
-        Scheduler[Daily Scheduler]
-        SEC[SEC Check]
-        Patents[Patent Check]
-        Jobs[Jobs Check]
-        News[News Monitor]
-    end
-    
-    subgraph AutoProcess[Auto Processing]
-        Download[Download]
-        Extract[Extract Text]
-        Embed[Embed]
-        Summarize[Auto Summarize]
-        Analyze[Anomaly Check]
-    end
-    
-    subgraph AutoNotify[Auto Notifications]
-        EmailAlert[Email Alert]
-        SlackAlert[Slack Alert]
-        CalendarEvent[Calendar Event]
-        Report[Auto Report]
-    end
-    
-    Scheduler --> SEC
-    Scheduler --> Patents
-    Scheduler --> Jobs
-    Scheduler --> News
-    
-    SEC --> Download
-    Download --> Extract
-    Extract --> Embed
-    Extract --> Summarize
-    Extract --> Analyze
-    
-    Summarize --> EmailAlert
-    Analyze --> EmailAlert
-    Analyze --> SlackAlert
-    SEC --> CalendarEvent
-    Summarize --> Report
 ```
 
 ---
@@ -283,41 +216,34 @@ flowchart LR
         SEC[SEC EDGAR]
         USPTO[USPTO Patents]
         Jobs[Job Boards]
-        News[News APIs]
+        News[News / RSS]
         Brave[Brave Search]
     end
-    
+
     subgraph AI[AI Layer]
         Claude[Claude API]
         SentenceT[Sentence Transformers]
     end
-    
+
     subgraph Storage[Storage]
         ChromaDB[(ChromaDB)]
-        SQLiteDB[(SQLite)]
     end
-    
+
     subgraph Backend[Python Backend]
         FastAPI
         APScheduler
     end
-    
-    subgraph IntegrationLayer[Integrations]
-        Slack[Slack Bot]
-        EmailService[SendGrid]
-        CalendarAPI[Google Calendar]
-    end
-    
+
     subgraph Frontend[React Frontend]
-        NextJS[Next.js 14]
+        NextJS[Next.js 16]
         shadcn[shadcn/ui]
         Recharts
+        Leaflet
     end
-    
+
     DataSources --> Backend
     AI --> Backend
     Storage --> Backend
-    Backend --> IntegrationLayer
     Backend --> Frontend
 ```
 
@@ -326,25 +252,21 @@ flowchart LR
 | Layer | Technology | Purpose | Cost |
 |-------|------------|---------|------|
 | Vector DB | ChromaDB | Document embeddings and semantic search | FREE |
-| Relational DB | SQLite | Structured data, analytics, alerts | FREE |
-| Cache | In-memory dict | Session memory, conversation history | FREE |
+| Cache | In-memory dict | Session memory, API response caching | FREE |
 | Embeddings | all-mpnet-base-v2 | 768-dim sentence embeddings | FREE |
 | LLM | Claude API | Response generation, summarization | ~$20-50/mo |
 | Web Search | Brave Search API | Real-time web information | FREE tier |
 | SEC Data | SEC EDGAR API | Auto-download filings | FREE |
 | Patents | USPTO PatentsView | Patent tracking | FREE |
 | Jobs | Web scraping | Hiring trend analysis | FREE |
-| News | RSS feeds | Real-time news feeds | FREE |
+| News | Brave Search / RSS | Real-time news feeds | FREE |
 | Scheduler | APScheduler | Background jobs | FREE |
 | Backend | FastAPI | REST API with async support | FREE |
-| Frontend | Next.js 14 | React framework with App Router | FREE |
-| Styling | Tailwind CSS | Utility-first CSS | FREE |
+| Frontend | Next.js 16 | React framework with App Router | FREE |
+| Styling | Tailwind CSS v4 | Utility-first CSS | FREE |
 | Components | shadcn/ui | Accessible UI components | FREE |
 | Charts | Recharts | Composable React charts | FREE |
-| Maps | Leaflet + OSM | Geographic heatmap | FREE |
-| Email | SendGrid | Email notifications | FREE tier |
-| Chat | Slack Bot | Slack integration | FREE |
-| Calendar | Google Calendar API | Auto-sync earnings dates | FREE |
+| Maps | Leaflet + React-Leaflet | Geographic heatmap | FREE |
 | PDF Export | WeasyPrint | PDF report generation | FREE |
 | Excel Export | openpyxl | Excel/CSV export | FREE |
 | PPTX Export | python-pptx | PowerPoint generation | FREE |
@@ -354,406 +276,247 @@ flowchart LR
 ## Project Structure
 
 ```
-SCU Flex Practicum 2026/
-├── backend/                          # FastAPI Backend
-│   ├── main.py                       # FastAPI app entry
-│   ├── requirements.txt              # Python dependencies
-│   ├── .env                          # API keys
+Flex-Practicum-Project-2026/
+├── backend/                              # FastAPI Backend
+│   ├── main.py                           # App entry point + route registration
+│   ├── requirements.txt                  # Python dependencies
+│   ├── .env                              # API keys (not in git)
+│   ├── .env.example                      # Template for .env
 │   │
 │   ├── core/
-│   │   ├── config.py                 # Settings & company metadata
-│   │   ├── database.py               # ChromaDB + SQLite clients
-│   │   ├── memory.py                 # In-memory session cache
-│   │   └── scheduler.py              # APScheduler for background jobs
+│   │   ├── config.py                     # Settings, company definitions, env vars
+│   │   ├── database.py                   # ChromaDB client + embedding model
+│   │   └── cache.py                      # In-memory cache with TTL
 │   │
-│   ├── ingestion/                    # Data Ingestion Layer
-│   │   ├── sec_scraper.py            # SEC EDGAR 10-K, 10-Q, 8-K
-│   │   ├── earnings_scraper.py       # Earnings call transcripts
-│   │   ├── patent_scraper.py         # USPTO patent filings
-│   │   ├── job_scraper.py            # LinkedIn/Indeed job postings
-│   │   ├── news_aggregator.py        # RSS news feeds
-│   │   ├── table_extractor.py        # PDF table/chart extraction
-│   │   ├── downloader.py             # File download & storage
-│   │   ├── processor.py              # Text extraction & chunking
-│   │   └── jobs.py                   # Scheduled ingestion jobs
+│   ├── rag/                              # RAG Pipeline
+│   │   ├── retriever.py                  # Vector search against ChromaDB
+│   │   ├── generator.py                  # Claude API integration
+│   │   ├── web_search.py                 # Brave Search integration
+│   │   ├── pipeline.py                   # Hybrid RAG + Web + Memory pipeline
+│   │   ├── agentic.py                    # Agentic RAG capabilities
+│   │   └── memory.py                     # Conversation memory
 │   │
-│   ├── rag/
-│   │   ├── retriever.py              # Vector search
-│   │   ├── web_search.py             # Brave Search integration
-│   │   ├── generator.py              # Claude integration
-│   │   ├── memory.py                 # Conversation memory
-│   │   └── pipeline.py               # Hybrid RAG + Web + Memory
+│   ├── ingestion/                        # Data Ingestion Layer
+│   │   ├── sec_downloader.py             # SEC EDGAR filing downloader
+│   │   ├── earnings_scraper.py           # Earnings call transcripts
+│   │   ├── patent_scraper.py             # USPTO patent filings
+│   │   ├── job_scraper.py                # Job posting scraper
+│   │   ├── news_aggregator.py            # News aggregation
+│   │   ├── news_feed.py                  # News feed API routes
+│   │   ├── ocp_scraper.py                # OCP (Open Compute) scraper
+│   │   ├── processor.py                  # Text extraction & chunking
+│   │   └── scheduler.py                  # APScheduler for background jobs
 │   │
-│   ├── analytics/                    # Analytics Engine
-│   │   ├── sentiment.py              # Sentiment tracking over time
-│   │   ├── anomaly.py                # Anomaly detection
-│   │   ├── trends.py                 # Trend prediction
-│   │   ├── classifier.py             # AI vs Traditional classifier
-│   │   └── geographic.py             # Geographic analysis
+│   ├── analytics/                        # Analytics Engine
+│   │   ├── sentiment.py                  # Sentiment analysis (Claude-powered)
+│   │   ├── anomaly.py                    # CapEx anomaly detection
+│   │   ├── trends.py                     # Trend prediction
+│   │   ├── classifier.py                 # AI vs Traditional investment classifier
+│   │   ├── facility_extractor.py         # Facility location extraction
+│   │   ├── geographic.py                 # Geographic analysis
+│   │   └── table_extractor.py            # PDF/HTML table extraction
 │   │
-│   ├── alerts/                       # Alert System
-│   │   ├── detector.py               # Alert trigger detection
-│   │   ├── email_sender.py           # Email notifications
-│   │   ├── slack_client.py           # Slack notifications
-│   │   └── templates/                # Alert message templates
+│   ├── alerts/                           # Alert System
+│   │   ├── alert_manager.py              # Alert management & persistence
+│   │   ├── detector.py                   # Alert trigger detection
+│   │   ├── email_sender.py               # SendGrid email notifications
+│   │   └── slack_client.py               # Slack notifications
 │   │
-│   ├── exports/                      # Export Generators
-│   │   ├── excel.py                  # Excel/CSV export
-│   │   ├── powerpoint.py             # PPTX generation
-│   │   ├── pdf.py                    # PDF report generation
-│   │   └── templates/                # Report templates
+│   ├── exports/                          # Export Generators
+│   │   ├── excel.py                      # Excel/CSV export (openpyxl)
+│   │   ├── powerpoint.py                 # PPTX generation (python-pptx)
+│   │   └── pdf.py                        # PDF report generation
 │   │
-│   ├── integrations/                 # External Integrations
-│   │   ├── slack_bot.py              # Slack bot commands
-│   │   └── calendar.py               # Earnings calendar sync
+│   ├── reports/                          # Reports & Scheduling
+│   │   ├── auto_summarizer.py            # Auto-summarize new filings
+│   │   ├── calendar.py                   # Earnings calendar management
+│   │   └── scheduler.py                  # Report scheduling
 │   │
-│   └── api/routes/
-│       ├── chat.py                   # /api/chat (with memory)
-│       ├── companies.py              # /api/companies
-│       ├── analysis.py               # /api/analysis
-│       ├── reports.py                # /api/reports
-│       ├── alerts.py                 # /api/alerts
-│       ├── ingestion.py              # /api/ingestion status
-│       └── slack.py                  # /api/slack webhook
+│   └── api/routes/                       # API Route Definitions
+│       ├── chat.py                       # /api/chat — AI chat with RAG
+│       ├── companies.py                  # /api/companies — company list & details
+│       ├── company_detail.py             # /api/company/{name} — deep-dive
+│       ├── analysis.py                   # /api/analysis — CapEx analysis
+│       ├── analytics.py                  # /api/analytics — anomalies, trends
+│       ├── dashboard.py                  # /api/dashboard — dashboard data
+│       ├── sentiment.py                  # /api/sentiment — sentiment analysis
+│       ├── geographic.py                 # /api/geographic — facility maps
+│       ├── financials.py                 # /api/financials — financial data
+│       ├── earnings.py                   # /api/earnings — earnings calendar
+│       ├── ingestion.py                  # /api/ingestion — SEC filing status
+│       ├── alerts.py                     # /api/alerts — alert management
+│       ├── exports.py                    # /api/exports — file exports
+│       ├── advanced_data.py              # /api/patents, /api/jobs, /api/ocp
+│       └── reports.py                    # /api/summaries, /api/calendar
 │
-├── frontend/                         # Next.js Frontend
-│   ├── app/
-│   │   ├── layout.tsx                # Root layout + sidebar
-│   │   ├── page.tsx                  # Home redirect
-│   │   ├── chat/page.tsx             # Chat with memory indicator
-│   │   ├── dashboard/page.tsx        # Main analytics dashboard
-│   │   ├── heatmap/page.tsx          # Geographic heatmap
-│   │   ├── sentiment/page.tsx        # Sentiment timeline
-│   │   ├── alerts/page.tsx           # Alert management
-│   │   ├── companies/
-│   │   │   ├── page.tsx              # Company list
-│   │   │   ├── [symbol]/page.tsx     # Company deep-dive
-│   │   │   └── compare/page.tsx      # Side-by-side comparison
-│   │   ├── calendar/page.tsx         # Earnings calendar
-│   │   ├── reports/page.tsx          # Report generation
-│   │   └── settings/page.tsx         # Ingestion & alert settings
+├── frontend/                             # Next.js 16 Frontend
+│   ├── src/
+│   │   ├── app/                          # App Router Pages
+│   │   │   ├── layout.tsx                # Root layout + sidebar navigation
+│   │   │   ├── page.tsx                  # Home / landing page
+│   │   │   ├── dashboard/page.tsx        # Analytics dashboard
+│   │   │   ├── chat/page.tsx             # AI chat interface
+│   │   │   ├── companies/page.tsx        # Company list
+│   │   │   ├── companies/[company]/      # Company deep-dive
+│   │   │   ├── compare/page.tsx          # Side-by-side comparison
+│   │   │   ├── analysis/page.tsx         # CapEx analysis
+│   │   │   ├── analytics/page.tsx        # Advanced analytics
+│   │   │   ├── sentiment/page.tsx        # Sentiment timeline
+│   │   │   ├── heatmap/page.tsx          # Geographic heatmap
+│   │   │   ├── map/page.tsx              # Facility map
+│   │   │   ├── news/page.tsx             # News feed
+│   │   │   ├── data/page.tsx             # Data explorer
+│   │   │   ├── reports/page.tsx          # Report generation
+│   │   │   ├── calendar/page.tsx         # Earnings calendar
+│   │   │   ├── alerts/page.tsx           # Alert management
+│   │   │   └── settings/page.tsx         # Settings & configuration
+│   │   │
+│   │   ├── components/
+│   │   │   ├── layout/Sidebar.tsx        # Navigation sidebar
+│   │   │   ├── map/LeafletMap.tsx         # Leaflet map component
+│   │   │   └── ui/                       # shadcn/ui components
+│   │   │       ├── avatar.tsx
+│   │   │       ├── badge.tsx
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── scroll-area.tsx
+│   │   │       ├── separator.tsx
+│   │   │       ├── skeleton.tsx
+│   │   │       └── tabs.tsx
+│   │   │
+│   │   └── lib/
+│   │       ├── api.ts                    # Backend API client
+│   │       └── utils.ts                  # Utility functions
 │   │
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── Header.tsx
-│   │   ├── chat/
-│   │   │   ├── ChatInterface.tsx
-│   │   │   ├── SearchModeToggle.tsx
-│   │   │   ├── MemoryIndicator.tsx
-│   │   │   └── SourceCitation.tsx
-│   │   ├── dashboard/
-│   │   │   ├── MetricCard.tsx
-│   │   │   ├── SentimentChart.tsx
-│   │   │   ├── AnomalyAlert.tsx
-│   │   │   └── TrendForecast.tsx
-│   │   ├── charts/
-│   │   │   ├── CapExTimeline.tsx
-│   │   │   ├── CompanyComparison.tsx
-│   │   │   ├── GeographicHeatmap.tsx
-│   │   │   ├── SentimentTimeline.tsx
-│   │   │   └── RiskMatrix.tsx
-│   │   ├── exports/
-│   │   │   ├── ExportButton.tsx
-│   │   │   └── ReportBuilder.tsx
-│   │   └── alerts/
-│   │       ├── AlertCard.tsx
-│   │       └── AlertSettings.tsx
-│   │
-│   └── lib/
-│       ├── api.ts                    # API client
-│       ├── types.ts                  # TypeScript types
-│       └── hooks/
-│           ├── useChat.ts            # Chat with memory
-│           └── useAlerts.ts          # Real-time alerts
+│   ├── package.json
+│   └── .env.local                        # Frontend config (not in git)
 │
-├── chromadb_store/                   # Vector database
-├── data/                             # Downloaded data
-│   ├── sec_filings/
-│   ├── earnings_transcripts/
-│   ├── patents/
-│   ├── job_postings/
-│   └── news/
+├── Vector Database/
+│   └── build_chromadb.py                 # ChromaDB embedding pipeline
 │
-├── Flex/                             # Existing data - 27 HTML files
-├── Jabil/                            # Existing data - 84 PDF files
-├── Celestica/Celestica/              # Existing data - 77 files
-├── benchmark/                        # Existing data - 111 files
-├── Sanmina/                          # Existing data - 106 files
-└── Vector Database/
-    └── build_chromadb.py             # ChromaDB builder script
+├── chromadb_store/                       # Vector database (built locally, not in git)
+├── data/                                 # Downloaded data (SEC filings, news, etc.)
+│
+├── Flex/                                 # Flex SEC filings (HTML)
+├── Jabil/                                # Jabil SEC filings (PDF)
+├── Celestica/                            # Celestica filings (PDF)
+├── benchmark/                            # Benchmark filings (HTM)
+├── Sanmina/                              # Sanmina filings (PDF)
+│
+├── SETUP.md                              # Detailed setup guide for teammates
+└── README.md                             # This file
 ```
 
 ---
 
 ## API Endpoints
 
+Full interactive API docs available at **http://localhost:8001/docs** when the backend is running.
+
+### Chat
+
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/chat` | POST | RAG query with Claude (supports web search mode) |
-| `/api/companies` | GET | List 5 companies |
-| `/api/companies/{symbol}` | GET | Company details |
-| `/api/analysis/overview` | GET | Dashboard metrics |
-| `/api/analysis/capex-comparison` | GET | CapEx by company |
-| `/api/analysis/sentiment` | GET | Sentiment trends |
-| `/api/analysis/anomalies` | GET | Detected anomalies |
-| `/api/reports/generate` | POST | Generate PDF/Excel/PPTX report |
-| `/api/alerts` | GET | List alerts |
-| `/api/alerts/settings` | PUT | Configure alert preferences |
-| `/api/ingestion/status` | GET | Check ingestion job status |
-| `/api/ingestion/trigger` | POST | Manually trigger SEC check |
+| `/api/chat` | POST | RAG query with Claude (RAG / Web / Hybrid modes) |
+| `/api/chat/stream` | POST | Streaming chat response |
+| `/api/chat/sessions` | GET | List chat sessions |
+| `/api/chat/sessions/{id}` | GET | Get session details |
+| `/api/chat/sessions/{id}/history` | GET | Get conversation history |
 
----
+### Companies
 
-## Team Structure
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/companies` | GET | List all 5 tracked companies |
+| `/api/companies/{ticker}` | GET | Company details by ticker |
+| `/api/companies/{ticker}/filings` | GET | Company filing documents |
+| `/api/companies/compare/{tickers}` | GET | Compare multiple companies |
+| `/api/company/{name}/overview` | GET | Company deep-dive overview |
+| `/api/company/{name}/filings` | GET | Filing breakdown |
+| `/api/company/{name}/capex` | GET | CapEx analysis |
+| `/api/company/{name}/ai-analysis` | GET | AI investment analysis |
+| `/api/company/{name}/geographic` | GET | Facility locations |
+| `/api/company/{name}/news` | GET | Company news |
 
-```mermaid
-flowchart TB
-    subgraph Team[Development Team - 40 hrs/week]
-        DevA[Dev A: Backend Core<br/>Python, FastAPI, ChromaDB]
-        DevB[Dev B: Data & NLP<br/>Scraping, Processing, Analytics]
-        DevC[Dev C: Frontend<br/>TypeScript, React, Next.js]
-        DevD[Dev D: Integration<br/>Full-stack, APIs, Testing]
-    end
-    
-    DevA --> Backend[Backend Development]
-    DevB --> Data[Data Pipeline]
-    DevC --> UI[User Interface]
-    DevD --> Integration[System Integration]
-```
+### Analysis & Analytics
 
----
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/analysis/overview` | GET | Dashboard metrics overview |
+| `/api/analysis/capex` | GET | CapEx data across companies |
+| `/api/analysis/ai-investments` | GET | AI investment analysis |
+| `/api/analytics/anomalies` | GET | All detected anomalies |
+| `/api/analytics/trends` | GET | Trend predictions |
+| `/api/analytics/classification` | GET | AI vs Traditional classification |
+| `/api/analytics/dashboard` | GET | Full analytics dashboard data |
 
-## 12-Week Execution Plan
+### Sentiment
 
-```mermaid
-gantt
-    title 12-Week Build Plan
-    dateFormat  YYYY-MM-DD
-    section Core
-    W1 Foundation           :w1, 2026-02-09, 7d
-    W2 RAG Chat             :w2, after w1, 7d
-    W3 Hybrid + Memory      :w3, after w2, 7d
-    section Data
-    W4 SEC Auto-Download    :w4, after w3, 7d
-    section Analytics
-    W5 Analytics Engine     :w5, after w4, 7d
-    W6 Dashboard Charts     :w6, after w5, 7d
-    section Pages
-    W7 Geographic + List    :w7, after w6, 7d
-    W8 Company Deep-Dive    :w8, after w7, 7d
-    section Notifications
-    W9 Alerts System        :w9, after w8, 7d
-    W10 Export Features     :w10, after w9, 7d
-    section Advanced
-    W11 More Data Sources   :w11, after w10, 7d
-    W12 Polish + Auto       :w12, after w11, 7d
-```
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/sentiment/company/{name}` | GET | Sentiment analysis for a company |
+| `/api/sentiment/compare` | GET | Compare sentiment across companies |
+| `/api/sentiment/trend/{name}` | GET | Sentiment trend over time |
+| `/api/sentiment/ai-focus` | GET | AI investment focus comparison |
+| `/api/sentiment/dashboard` | GET | Sentiment dashboard data |
 
-### Weekly Milestones
+### Geographic
 
-| Week | Focus | Key Deliverable |
-|------|-------|-----------------|
-| 1 | Foundation | Project structure + ChromaDB populated |
-| 2 | RAG Chat | Working Q&A with citations |
-| 3 | Hybrid Search | RAG + Web + Memory |
-| 4 | Auto-Ingest | SEC filings auto-download |
-| 5 | Analytics | Sentiment + Anomaly detection |
-| 6 | Dashboard | Charts with real data |
-| 7 | Geographic | Heatmap + Company list |
-| 8 | Deep-Dive | Company pages + Comparison |
-| 9 | Alerts | Email + Slack notifications |
-| 10 | Exports | PDF/Excel/PPTX |
-| 11 | Data Sources | Patents, Jobs, News |
-| 12 | Polish | Auto-reports + Calendar sync |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/geographic/facilities` | GET | All company facilities |
+| `/api/geographic/heatmap` | GET | Heatmap data for all companies |
+| `/api/geographic/facilities/{name}` | GET | Facilities for one company |
+| `/api/geographic/discoveries` | GET | Newly discovered locations |
 
----
+### Dashboard
 
-## Week-by-Week Task Breakdown
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/dashboard/quick` | GET | Quick dashboard summary |
+| `/api/dashboard/full` | GET | Full dashboard with all data |
+| `/api/dashboard/company/{name}` | GET | Single company dashboard |
 
-### Week 1: Foundation (40 hrs)
+### News & Earnings
 
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Set up backend structure, FastAPI, ChromaDB client | 10 | `backend/` folder with working FastAPI |
-| B | Fix `build_chromadb.py`, process all 5 companies | 10 | ChromaDB populated with ~405 docs |
-| C | Initialize Next.js, Tailwind, shadcn/ui, layout | 10 | `frontend/` with sidebar + routing |
-| D | Set up .env files, API keys, project documentation | 10 | All configs ready, README updated |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/news/company/{ticker}` | GET | News for a company |
+| `/api/news/industry` | GET | Industry-wide news |
+| `/api/earnings/calendar` | GET | Earnings calendar |
+| `/api/earnings/company/{ticker}` | GET | Company earnings info |
+| `/api/earnings/upcoming` | GET | Upcoming earnings dates |
 
-### Week 2: RAG Chat (40 hrs)
+### Advanced Data (Patents, Jobs, OCP)
 
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build retriever.py (embed + search ChromaDB) | 10 | Vector search working |
-| B | Build generator.py (Claude API + citations) | 10 | Claude returns answers with sources |
-| C | Build chat page UI (messages, input, send) | 10 | `/chat` page with message bubbles |
-| D | Connect frontend to backend, test end-to-end | 10 | Full chat flow working |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/patents/{company}` | GET | Patent filings for a company |
+| `/api/patents/compare/all` | GET | Patent comparison across companies |
+| `/api/jobs/{company}` | GET | Job postings for a company |
+| `/api/jobs/compare/all` | GET | Hiring comparison across companies |
+| `/api/ocp/{company}` | GET | Open Compute involvement |
+| `/api/intelligence/{company}` | GET | Combined intelligence report |
 
-### Week 3: Web Search + Memory (40 hrs)
+### Exports
 
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build web_search.py (Brave API integration) | 10 | Web search returns results |
-| B | Build hybrid pipeline (RAG + Web + merge) | 10 | Mode toggle: RAG/Web/Hybrid |
-| C | Add mode toggle UI, memory indicator | 10 | UI shows search mode, context |
-| D | Build conversation memory (in-memory) | 10 | Multi-turn conversations work |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/exports/excel/{company}` | GET | Download Excel report |
+| `/api/exports/excel/comparison/all` | GET | Download comparison Excel |
+| `/api/exports/powerpoint/{company}` | GET | Download PowerPoint report |
+| `/api/exports/pdf/{company}` | GET | Download PDF report |
 
-### Week 4: SEC Auto-Download (40 hrs)
+### Alerts & Ingestion
 
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build sec_scraper.py (EDGAR API) | 10 | Can fetch filing metadata |
-| B | Build downloader.py + processor.py | 10 | Downloads and embeds new docs |
-| C | Build settings page (ingestion controls) | 10 | `/settings` with status display |
-| D | Build scheduler.py (APScheduler) | 10 | Daily 4PM check running |
-
-### Week 5: Analytics Engine (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build sentiment.py (sentiment analysis) | 10 | Sentiment scores per document |
-| B | Build anomaly.py (detect CapEx spikes) | 10 | Anomaly detection working |
-| C | Build dashboard layout with metric cards | 10 | `/dashboard` with placeholders |
-| D | Build analysis API endpoints | 10 | `/api/analysis/*` endpoints |
-
-### Week 6: Dashboard Charts (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build trends.py (forecasting) | 10 | Trend predictions working |
-| B | Build classifier.py (AI vs Traditional) | 10 | Investment classification |
-| C | Build Recharts components (pie, bar, line) | 10 | Charts rendering real data |
-| D | Connect dashboard to analysis endpoints | 10 | Live data in dashboard |
-
-### Week 7: Geographic + Company Pages (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build geographic.py (location extraction) | 10 | Facility locations extracted |
-| B | Build table_extractor.py (PDF tables) | 10 | Financial tables parsed |
-| C | Build geographic heatmap (Leaflet) | 10 | `/heatmap` with markers |
-| D | Build company list page | 10 | `/companies` with cards |
-
-### Week 8: Company Deep-Dive (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build company detail API endpoints | 10 | `/api/companies/{symbol}/*` |
-| B | Build earnings_scraper.py | 10 | Earnings transcripts scraped |
-| C | Build company detail page with tabs | 10 | `/companies/[symbol]` page |
-| D | Build comparison page | 10 | `/companies/compare` working |
-
-### Week 9: Alerts System (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build detector.py (alert triggers) | 10 | Alerts triggered on events |
-| B | Build email_sender.py (SendGrid) | 10 | Email alerts sent |
-| C | Build alerts page UI | 10 | `/alerts` with history |
-| D | Build slack_client.py | 10 | Slack alerts working |
-
-### Week 10: Export Features (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build excel.py (openpyxl export) | 10 | Excel/CSV download working |
-| B | Build powerpoint.py (python-pptx) | 10 | PPTX export working |
-| C | Build reports page + preview | 10 | `/reports` with builder |
-| D | Build pdf.py (WeasyPrint) | 10 | PDF reports generated |
-
-### Week 11: Advanced Data Sources (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build patent_scraper.py (USPTO) | 10 | Patent tracking working |
-| B | Build job_scraper.py | 10 | Job posting analysis |
-| C | Add patent/hiring tabs to company pages | 10 | New data in UI |
-| D | Build news_aggregator.py (RSS) | 10 | News feeds integrated |
-
-### Week 12: Polish + Auto Reports (40 hrs)
-
-| Dev | Task | Hours | Deliverable |
-|-----|------|-------|-------------|
-| A | Build auto-summarizer for new filings | 10 | Auto-summaries generated |
-| B | Build calendar.py (Google Calendar sync) | 10 | Earnings auto-synced |
-| C | Build calendar page UI | 10 | `/calendar` view |
-| D | Build auto-report scheduler | 10 | Weekly/monthly reports |
-
----
-
-## Fully Automated Features
-
-### Zero Manual Work for Client
-
-```mermaid
-flowchart LR
-    Client[Client Logs In] --> Dashboard[Dashboard Ready]
-    Dashboard --> Current[All Data Current]
-    Dashboard --> Alerts[Alerts in Inbox]
-    Dashboard --> Calendar[Calendar Updated]
-    Dashboard --> Reports[Reports Waiting]
-    
-    Client --> Chat[Ask Questions]
-    Chat --> Answers[Get Answers with Sources]
-```
-
-### Auto Data Ingestion
-
-| What | Automation |
-|------|------------|
-| SEC Filings | Daily check at 4 PM ET, auto-download and index new 10-K/10-Q/8-K |
-| Earnings Transcripts | Auto-fetch after earnings calls |
-| Patents | Weekly scan for new filings |
-| Job Postings | Daily scrape for hiring trends |
-| News | Real-time RSS monitoring |
-
-### Auto Alerts
-
-| Trigger | Action |
-|---------|--------|
-| New SEC filing detected | Email + Slack notification with summary |
-| CapEx anomaly (>20% change) | Immediate alert with analysis |
-| Sentiment shift detected | Alert with before/after comparison |
-| New patent filed | Weekly digest email |
-| Unusual hiring activity | Alert with trend chart |
-
-### Auto Reports
-
-| Report | Schedule |
-|--------|----------|
-| Weekly Intelligence Brief | Every Monday 8 AM |
-| Monthly CapEx Summary | 1st of each month |
-| Quarterly Competitor Analysis | After each earnings season |
-| Anomaly Report | Whenever detected (instant) |
-
-### Auto Calendar Sync
-
-| Event | Automation |
-|-------|------------|
-| Upcoming earnings dates | Auto-added to Google Calendar |
-| SEC filing deadlines | Calendar reminders |
-| Detected events from filings | Auto-scheduled |
-
-### Auto Summarization
-
-| Document | Automation |
-|----------|------------|
-| New 10-K filing | 1-page executive summary generated |
-| Earnings call transcript | Key points extracted |
-| 8-K material event | Impact assessment generated |
-
----
-
-## Alert Triggers
-
-| Trigger | Condition | Priority |
-|---------|-----------|----------|
-| New SEC Filing | 10-K, 10-Q, 8-K detected | High |
-| CapEx Anomaly | >20% change from baseline | High |
-| Sentiment Shift | Score changes >0.3 | Medium |
-| Keyword Match | Custom keywords in new docs | Medium |
-| Hiring Spike | >50% increase in postings | Low |
-| Patent Filed | New patent by competitor | Low |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/alerts` | GET | List all alerts |
+| `/api/alerts/check` | POST | Check for new alerts |
+| `/api/alerts/summary` | GET | Alert summary |
+| `/api/ingestion/status` | GET | Ingestion job status |
+| `/api/ingestion/check-filings` | POST | Manually trigger SEC check |
 
 ---
 
@@ -771,47 +534,26 @@ flowchart LR
 
 ## Environment Variables
 
-### Backend (.env)
+### Backend (`backend/.env`)
 
 ```bash
-# LLM (MAIN COST - ~$20-50/month)
+# REQUIRED — Claude API (~$20-50/month)
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Vector Database (FREE - local)
-CHROMADB_PATH=../chromadb_store
-EMBEDDING_MODEL=all-mpnet-base-v2
-
-# Relational Database (FREE - SQLite)
-DATABASE_URL=sqlite:///./flex_intel.db
-
-# Web Search (FREE tier - 2,000 queries/month)
+# OPTIONAL — Brave Web Search (FREE tier: 2,000 queries/month)
 BRAVE_API_KEY=BSA...
 
-# Email Alerts (FREE tier - 100 emails/day)
-SENDGRID_API_KEY=SG...
-ALERT_FROM_EMAIL=alerts@yourapp.com
+# SEC Scraper (FREE — just needs User-Agent)
+SEC_USER_AGENT=CapExIntel/1.0 (your@email.com)
 
-# Slack (FREE for personal workspace)
-SLACK_BOT_TOKEN=xoxb-...
-SLACK_SIGNING_SECRET=...
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-
-# Google Calendar (FREE - OAuth2)
-GOOGLE_CALENDAR_CREDENTIALS=./credentials.json
-GOOGLE_CALENDAR_ID=primary
-
-# SEC Scraper (FREE - just needs User-Agent)
-SEC_USER_AGENT=FlexIntel/1.0 (your@email.com)
-INGESTION_SCHEDULE=0 16 * * 1-5    # 4 PM ET, weekdays
-
-# Data Paths
-DATA_DIR=../
+# Scheduler (Cron format: 4 PM ET, weekdays)
+INGESTION_SCHEDULE=0 16 * * 1-5
 ```
 
-### Frontend (.env.local)
+### Frontend (`frontend/.env.local`)
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8001
 ```
 
 ---
@@ -826,53 +568,26 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ---
 
-## Quick Start
+## Frontend Pages
 
-### Prerequisites
-
-- Python 3.9+
-- Node.js 18+
-- Anthropic API key (Claude)
-
-### Backend Setup
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your API keys
-uvicorn main:app --reload
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-### Build ChromaDB
-
-```bash
-cd "Vector Database"
-python build_chromadb.py
-```
-
----
-
-## Team Coordination
-
-1. **Daily Standup** (15 min): Quick sync on blockers
-2. **Weekly Demo**: Friday - show what's working
-3. **Branch Strategy**:
-   - `main` - stable
-   - `dev` - integration
-   - `feature/*` - individual work
-4. **API Contract First**: Define endpoints before building
+| Page | URL | Description |
+|------|-----|-------------|
+| Dashboard | `/dashboard` | Overview with charts, metrics, company summaries |
+| AI Chat | `/chat` | Ask questions — AI answers using SEC filings |
+| Companies | `/companies` | Browse all 5 tracked companies |
+| Company Detail | `/companies/[name]` | Deep-dive into a single company |
+| Compare | `/compare` | Side-by-side company comparison |
+| Analysis | `/analysis` | CapEx analysis and data |
+| Analytics | `/analytics` | Anomalies, trends, classification |
+| Sentiment | `/sentiment` | Sentiment analysis over time |
+| Heatmap | `/heatmap` | Geographic facility map |
+| Map | `/map` | Interactive Leaflet map |
+| News | `/news` | Latest news for tracked companies |
+| Data | `/data` | Data explorer |
+| Reports | `/reports` | Generate PDF/Excel/PPTX reports |
+| Calendar | `/calendar` | Earnings calendar |
+| Alerts | `/alerts` | Alert management and history |
+| Settings | `/settings` | Ingestion and configuration |
 
 ---
 
