@@ -86,6 +86,11 @@ def extract_financial_data_from_text(text: str) -> dict:
             r"capital\s+expenditure[s]?\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
             r"capex\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
             r"\$?([\d,.]+)\s*(billion|million|B|M)?\s+(?:in\s+)?(?:capital\s+expenditure|capex)",
+            r"purchases?\s+of\s+property\s+(?:and|,)\s*(?:plant\s+(?:and|,)\s*)?equipment\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
+            r"acquisition\s+of\s+property\s*,?\s*plant\s+(?:and|,)\s*equipment\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
+            r"additions?\s+to\s+property\s+(?:and|,)\s*equipment\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
+            r"capital\s+spending\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
+            r"payments?\s+for\s+property\s+(?:and|,)\s*equipment\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
         ],
         "free_cash_flow": [
             r"free\s+cash\s+flow\s*(?:of|was|were|:)?\s*\$?([\d,.]+)\s*(billion|million|B|M)?",
@@ -111,7 +116,7 @@ def extract_financial_data_from_text(text: str) -> dict:
             if match:
                 value = match.group(1).replace(",", "")
                 try:
-                    value = float(value)
+                    value = abs(float(value))
                     # Apply multiplier if present
                     if len(match.groups()) > 1 and match.group(2):
                         multiplier = match.group(2).lower()

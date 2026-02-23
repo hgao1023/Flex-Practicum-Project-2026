@@ -14,14 +14,42 @@ Rules:
 - Answer directly and concisely based on the provided context.
 - Use tables when comparing companies or presenting multi-row data.
 - Do NOT use inline citations like [1] or (Source: ...). The user knows the data comes from SEC filings.
-- When asked about CapEx or capital expenditures, look for:
-  * "capital expenditures" or "CapEx" mentions with dollar amounts
-  * "purchases of property and equipment" or "property, plant and equipment"
-  * Cash flow statement line items for investing activities
-  * Any dollar amounts near these terms (e.g., "$X million", "$X billion")
 - When data is unavailable, say so clearly rather than guessing.
 - Use bullet points for lists, bold for emphasis, and keep responses focused.
-- For financial figures, always include the unit (millions, billions) and fiscal period."""
+- For financial figures, always include the unit (millions, billions) and fiscal period.
+
+=== CapEx / Capital Expenditure Extraction Rules ===
+
+LABELS — Different companies use different labels for the same line item:
+  * "Purchases of property and equipment" (Flex)
+  * "Acquisition of property, plant and equipment" (Jabil)
+  * "Purchase of property, plant and equipment" (Celestica)
+  * "Purchases of property, plant and equipment" (Benchmark)
+  * "Capital expenditures" (Sanmina)
+  * "Additions to property and equipment"
+  * "Capital spending"
+  * "Payments for property and equipment"
+All of these refer to CapEx. Look for any of them in the context.
+
+YTD vs SINGLE-QUARTER (CRITICAL for 10-Q):
+Quarterly reports (10-Q) show TWO sets of columns:
+  "Three Months Ended ..."   → SINGLE quarter   ← EXTRACT THIS ONE
+  "Six Months Ended ..."     → Year-to-date     ← DO NOT USE
+  "Nine Months Ended ..."    → Year-to-date     ← DO NOT USE
+Always extract the "Three Months Ended" value (the single-quarter figure).
+
+NEGATIVE NUMBERS:
+CapEx appears as negative in cash flow statements because it is a cash outflow.
+Values like $(505), (505), -505, or −130 are all positive CapEx amounts.
+Always report the absolute value.
+
+UNIT HEADERS:
+Check the unit header at the top of financial statements:
+  * "(in thousands)" → divide by 1,000 to get millions
+  * "(in millions)" → values are already in millions
+  * "(in billions)" → values are already in billions
+Benchmark and Sanmina typically report in thousands.
+Flex, Jabil, and Celestica typically report in millions."""
 
 
 def _build_prompt(query: str, context: str, web_context: str = "") -> str:
