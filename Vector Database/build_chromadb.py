@@ -29,6 +29,13 @@ except ImportError:
     from bs4 import BeautifulSoup
     import PyPDF2
 
+try:
+    import pdfplumber
+except ImportError:
+    import subprocess, sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pdfplumber", "-q"])
+    import pdfplumber
+
 # ---------------------------------------------------------------------------
 # CONFIG — auto-detect project root from this script's location
 # ---------------------------------------------------------------------------
@@ -87,14 +94,120 @@ COMPANY_DISPLAY = {
 }
 
 # ---------------------------------------------------------------------------
+# TEXT POST-PROCESSING (Person 1 fixes)
+# ---------------------------------------------------------------------------
+def _collapse_char_spaced(text):
+    """Collapse character-spaced text like 'S t o c k  T r a d i n g' -> 'Stock Trading'."""
+    return re.sub(
+        r'(?<!\S)((?:\S ){3,}\S)(?!\S)',
+        lambda m: m.group(1).replace(" ", ""),
+        text,
+    )
+
+def _fix_word_boundaries(text):
+    """Insert spaces at camelCase / punctuation boundaries.
+    e.g. 'theCompany' -> 'the Company', 'operations.The' -> 'operations. The'
+    """
+    text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    text = re.sub(r'([.!?])([A-Z])', r'\1 \2', text)
+    return text
+
+def _clean_extracted_text(text):
+    """Apply all post-processing fixes to extracted text."""
+    text = _collapse_char_spaced(text)
+    text = _fix_word_boundaries(text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r" {2,}", " ", text)
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)
+    return text.strip()
+
+# ---------------------------------------------------------------------------
 # TEXT EXTRACTION
 # ---------------------------------------------------------------------------
 def extract_html(path):
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         soup = BeautifulSoup(f.read(), "html.parser")
-    return soup.get_text(separator="\n", strip=True)
+    for el in soup(["script", "style", "head", "meta"]):
+        el.decompose()
+    return _clean_extracted_text(soup.get_text(separator="\n", strip=True))
+
+def _extract_page_with_tables(page):
+    """Extract text from a single pdfplumber page, rendering tables as Markdown."""
+    parts = []
+    tables = page.find_tables()
+    table_bboxes = [t.bbox for t in tables]
+
+    # Extract non-table text
+    if table_bboxes:
+        non_table_page = page
+        for bbox in table_bboxes:
+            clipped = (
+                max(0, bbox[0]), max(0, bbox[1]),
+                min(page.width, bbox[2]), min(page.height, bbox[3]),
+            )
+            try:
+                non_table_page = non_table_page.outside_bbox(clipped)
+            except Exception:
+                pass
+        text = non_table_page.extract_text() or ""
+        if text.strip():
+            parts.append(text)
+    else:
+        text = page.extract_text() or ""
+        if text.strip():
+            parts.append(text)
+
+    # Extract tables as Markdown
+    for table in tables:
+        rows = table.extract()
+        if not rows or len(rows) < 2:
+            continue
+        header = [cell.strip() if cell else "" for cell in rows[0]]
+        md_lines = ["| " + " | ".join(header) + " |"]
+        md_lines.append("| " + " | ".join(["---"] * len(header)) + " |")
+        for row in rows[1:]:
+            cells = [cell.strip() if cell else "" for cell in row]
+            if any(cells):
+                md_lines.append("| " + " | ".join(cells) + " |")
+        parts.append("\n".join(md_lines))
+
+    return "\n\n".join(parts)
+
+def _extract_page_words(page):
+    """Word-level extraction for multi-column pages (correct reading order)."""
+    words = page.extract_words(x_tolerance=3, y_tolerance=3)
+    if not words:
+        return ""
+    # Group by y-position (lines), then sort each line by x
+    lines = {}
+    for w in words:
+        y_key = round(w["top"] / 3) * 3
+        lines.setdefault(y_key, []).append(w)
+    sorted_lines = sorted(lines.items())
+    result = []
+    for _, line_words in sorted_lines:
+        line_words.sort(key=lambda w: w["x0"])
+        result.append(" ".join(w["text"] for w in line_words))
+    return "\n".join(result)
 
 def extract_pdf(path):
+    """Extract text from PDF using pdfplumber (with table + multi-column support).
+    Falls back to PyPDF2 if pdfplumber fails entirely."""
+    text = ""
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                page_text = _extract_page_with_tables(page)
+                if not page_text or len(page_text.strip()) < 20:
+                    page_text = _extract_page_words(page)
+                if page_text:
+                    text += page_text + "\n\n"
+        if text.strip():
+            return _clean_extracted_text(text)
+    except Exception as e:
+        print(f" ⚠️  pdfplumber error, falling back to PyPDF2: {e}")
+
+    # PyPDF2 fallback
     text = ""
     try:
         with open(path, "rb") as f:
@@ -104,7 +217,7 @@ def extract_pdf(path):
                     text += t + "\n"
     except Exception as e:
         print(f" ⚠️  PDF error: {e}")
-    return text
+    return _clean_extracted_text(text)
 
 def extract(path):
     if path.suffix.lower() in (".html", ".htm"):
@@ -202,7 +315,7 @@ def get_fiscal_quarter(path, company):
 # ---------------------------------------------------------------------------
 # CHUNKING
 # ---------------------------------------------------------------------------
-def chunk_text(text, chunk_words=400, overlap_words=40):
+def chunk_text(text, chunk_words=250, overlap_words=25):
     words = text.split()
     if not words:
         return []
