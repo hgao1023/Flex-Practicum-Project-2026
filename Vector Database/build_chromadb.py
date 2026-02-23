@@ -366,7 +366,7 @@ def get_fiscal_quarter(path, company, content=""):
 # ---------------------------------------------------------------------------
 # CHUNKING
 # ---------------------------------------------------------------------------
-def chunk_text(text, chunk_words=250, overlap_words=25):
+def chunk_text(text, chunk_words=250, overlap_words=50):
     words = text.split()
     if not words:
         return []
